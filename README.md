@@ -98,7 +98,8 @@ The detailed learning-project operating pattern is documented in
 
 ## Running the Current ORM
 
-The current implementation is a minimal SQLite adapter.
+The current implementation has a minimal SQLite adapter and a small model
+hydration layer.
 
 Run the tests:
 
@@ -112,9 +113,16 @@ Run a small query example:
 ruby -Ilib -e 'require "acrc"; db = Acrc::SQLiteAdapter.new(":memory:"); db.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)"); db.execute("INSERT INTO users (name) VALUES (?)", ["Ruby"]); p db.execute("SELECT id, name FROM users WHERE name = ?", ["Ruby"]); db.close'
 ```
 
+Run a small hydration example:
+
+```sh
+ruby -Ilib -e 'require "acrc"; class User < Acrc::Model; table_name "users"; end; user = User.hydrate("id" => 1, "name" => "Ruby"); puts user.name'
+```
+
 The adapter opens a SQLite database, executes SQL with bind parameters, and
-returns result rows as hashes keyed by column name strings. There is no model
-mapping yet.
+returns result rows as hashes keyed by column name strings. `Acrc::Model` can
+hydrate one of those rows into a Ruby object with readable attributes. There is
+no finder or query API yet.
 
 ## Project Documents
 
@@ -123,3 +131,4 @@ mapping yet.
 - `LEARNING_PROJECT.md`: reusable AI-assisted learning project pattern.
 - `TODO.md`: living learning roadmap and progress tracker.
 - `docs/sql-execution.md`: notes on the first SQLite SQL execution boundary.
+- `docs/model-hydration.md`: notes on the first row-to-model mapping boundary.

@@ -80,14 +80,14 @@ Questions to answer:
 
 ### 2. Model Class And Row Hydration
 
-- [ ] Define a minimal model base class.
-- [ ] Configure or infer a table name.
-- [ ] Configure or assume a primary key.
-- [ ] Convert a result row into a model instance.
-- [ ] Add attribute readers for loaded columns.
-- [ ] Decide behavior for unknown attributes.
-- [ ] Add tests for row mapping and missing values.
-- [ ] Document the table-to-object mapping boundary.
+- [x] Define a minimal model base class.
+- [x] Configure or infer a table name.
+- [x] Configure or assume a primary key.
+- [x] Convert a result row into a model instance.
+- [x] Add attribute readers for loaded columns.
+- [x] Decide behavior for unknown attributes.
+- [x] Add tests for row mapping and missing values.
+- [x] Document the table-to-object mapping boundary.
 
 Questions to answer:
 
@@ -277,3 +277,11 @@ changes.
   execution boundary. It returns rows as hashes keyed by column name strings and
   wraps SQLite driver errors in `Acrc::DatabaseError`.
 - Documented the first SQL execution lifecycle in `docs/sql-execution.md`.
+- Added `Acrc::Model` as the first row hydration boundary. It uses explicit
+  table names, defaults the primary key to `id`, turns row hashes into model
+  instances, and defines readers for loaded attributes.
+- Decided that index-style access to a missing attribute raises
+  `Acrc::UnknownAttributeError`, while missing reader methods remain normal Ruby
+  `NoMethodError` behavior.
+- Documented the first table-to-object mapping boundary in
+  `docs/model-hydration.md`.
