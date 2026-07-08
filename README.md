@@ -98,11 +98,23 @@ The detailed learning-project operating pattern is documented in
 
 ## Running the Current ORM
 
-There is no implementation yet. The initial repository setup only defines the
-learning scope and roadmap.
+The current implementation is a minimal SQLite adapter.
 
-Once the first implementation milestone starts, this section should be updated
-with the exact setup, test, and example commands.
+Run the tests:
+
+```sh
+ruby -Itest -Ilib -e 'Dir["test/**/*_test.rb"].sort.each { |path| load path }'
+```
+
+Run a small query example:
+
+```sh
+ruby -Ilib -e 'require "acrc"; db = Acrc::SQLiteAdapter.new(":memory:"); db.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)"); db.execute("INSERT INTO users (name) VALUES (?)", ["Ruby"]); p db.execute("SELECT id, name FROM users WHERE name = ?", ["Ruby"]); db.close'
+```
+
+The adapter opens a SQLite database, executes SQL with bind parameters, and
+returns result rows as hashes keyed by column name strings. There is no model
+mapping yet.
 
 ## Project Documents
 
@@ -110,3 +122,4 @@ with the exact setup, test, and example commands.
 - `AGENTS.md`: working instructions for AI agents and future contributors.
 - `LEARNING_PROJECT.md`: reusable AI-assisted learning project pattern.
 - `TODO.md`: living learning roadmap and progress tracker.
+- `docs/sql-execution.md`: notes on the first SQLite SQL execution boundary.

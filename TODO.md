@@ -43,9 +43,9 @@ Roadmap sections are learning themes, not single work units.
 - [x] Create initial project documentation.
 - [x] Copy the reusable learning-project pattern.
 - [x] Decide the first implementation milestone.
-- [ ] Decide the initial Ruby package layout after the first milestone is
+- [x] Decide the initial Ruby package layout after the first milestone is
   ready to start.
-- [ ] Decide how to organize learning notes.
+- [x] Decide how to organize learning notes.
 
 First implementation milestone:
 
@@ -60,15 +60,15 @@ First implementation milestone:
 
 ### 1. Minimal Database Connection And Query
 
-- [ ] Initialize the Ruby project structure.
-- [ ] Decide whether the first adapter uses the `sqlite3` gem or another
+- [x] Initialize the Ruby project structure.
+- [x] Decide whether the first adapter uses the `sqlite3` gem or another
   deliberately small local test database approach.
-- [ ] Create a small connection or adapter object.
-- [ ] Execute a simple `SELECT` statement.
-- [ ] Pass user values through bind parameters.
-- [ ] Return result rows in a predictable shape.
-- [ ] Add a small example or test database fixture.
-- [ ] Document the first SQL execution lifecycle.
+- [x] Create a small connection or adapter object.
+- [x] Execute a simple `SELECT` statement.
+- [x] Pass user values through bind parameters.
+- [x] Return result rows in a predictable shape.
+- [x] Add a small example or test database fixture.
+- [x] Document the first SQL execution lifecycle.
 
 Questions to answer:
 
@@ -267,3 +267,13 @@ changes.
   migrations, transactions, validations, or callbacks.
 - Initial documentation follows the reusable learning-project pattern copied
   from `_tpeg`.
+- Initial package layout: start with `lib/acrc.rb`, a small
+  `Acrc::SQLiteAdapter`, and `test/`; add model and query packages only when
+  their boundaries become useful.
+- Learning notes will live under `docs/` as topic-specific Markdown files.
+- Chose the `sqlite3` gem for the first adapter because the project needs a real
+  database driver boundary to study SQL execution and bind parameters.
+- Added `Acrc::SQLiteAdapter#execute(sql, binds)` as the first database
+  execution boundary. It returns rows as hashes keyed by column name strings and
+  wraps SQLite driver errors in `Acrc::DatabaseError`.
+- Documented the first SQL execution lifecycle in `docs/sql-execution.md`.
