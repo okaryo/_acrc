@@ -98,9 +98,9 @@ The detailed learning-project operating pattern is documented in
 
 ## Running the Current ORM
 
-The current implementation has a minimal SQLite adapter, model hydration, a
-small finder API, explicit attribute type casting, insert/update persistence,
-dirty tracking, and destroy behavior.
+The current implementation has a minimal SQLite adapter, model hydration, lazy
+relations, explicit attribute type casting, insert/update persistence, dirty
+tracking, and destroy behavior.
 
 Run the tests:
 
@@ -125,6 +125,12 @@ Run a small finder example:
 
 ```sh
 bundle exec ruby -Ilib -e 'require "acrc"; db = Acrc::SQLiteAdapter.new(":memory:"); db.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)"); db.execute("INSERT INTO users (name) VALUES (?)", ["Ruby"]); class User < Acrc::Model; table_name "users"; end; User.connection db; puts User.find(1).name; db.close'
+```
+
+Run a small relation example:
+
+```sh
+bundle exec ruby -Ilib -e 'require "acrc"; db = Acrc::SQLiteAdapter.new(":memory:"); db.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, role TEXT)"); db.execute("INSERT INTO users (name, role) VALUES (?, ?)", ["Ruby", "member"]); class User < Acrc::Model; table_name "users"; end; User.connection db; relation = User.where(role: "member"); p relation.loaded?; p relation.map(&:name); db.close'
 ```
 
 Run a small type-casting example:
@@ -154,12 +160,13 @@ bundle exec ruby -Ilib -e 'require "acrc"; db = Acrc::SQLiteAdapter.new(":memory
 The adapter opens a SQLite database, executes SQL with bind parameters, and
 returns result rows as hashes keyed by column name strings. `Acrc::Model` can
 hydrate one of those rows into a Ruby object with readable attributes. `find`
-and `where` connect model metadata to SQL execution, validate SQL identifiers,
-and bind user values. Declared attributes are cast during hydration so model
-readers return Ruby-friendly values. `save` can insert new records and store a
-generated SQLite primary key back on the model. Persisted records track changes
-and `save` updates changed columns. `destroy` deletes the row and marks the
-object destroyed.
+connects model metadata to SQL execution. `where` returns a lazy relation that
+can compose query conditions before loading records. Query generation validates
+SQL identifiers and binds user values. Declared attributes are cast during
+hydration so model readers return Ruby-friendly values. `save` can insert new
+records and store a generated SQLite primary key back on the model. Persisted
+records track changes and `save` updates changed columns. `destroy` deletes the
+row and marks the object destroyed.
 
 ## Project Documents
 
@@ -179,3 +186,5 @@ object destroyed.
   state.
 - `docs/stale-records.md`: notes on affected-row checks and stale record
   detection.
+- `docs/relation-query-composition.md`: notes on lazy relations and query
+  composition.

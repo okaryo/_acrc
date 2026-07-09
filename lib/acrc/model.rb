@@ -42,35 +42,19 @@ module Acrc
     end
 
     def self.find(id)
-      row = execute_select(
-        "SELECT * FROM #{sql_identifier(table_name, "table name")} " \
-        "WHERE #{sql_identifier(primary_key, "primary key")} = ? LIMIT 1",
-        [id]
-      ).first
+      record = where(primary_key => id).to_a.first
 
-      return hydrate(row) if row
+      return record if record
 
       raise RecordNotFound, "could not find #{model_name} with #{primary_key}=#{id.inspect}"
     end
 
     def self.where(conditions)
-      unless conditions.is_a?(Hash) && !conditions.empty?
-        raise ArgumentError, "where conditions must be a non-empty hash"
-      end
+      all.where(conditions)
+    end
 
-      clauses = []
-      binds = []
-
-      conditions.each do |column, value|
-        clauses << "#{sql_identifier(column, "column name")} = ?"
-        binds << value
-      end
-
-      execute_select(
-        "SELECT * FROM #{sql_identifier(table_name, "table name")} " \
-        "WHERE #{clauses.join(" AND ")}",
-        binds
-      ).map { |row| hydrate(row) }
+    def self.all
+      Relation.new(self)
     end
 
     def self.hydrate(row)

@@ -42,9 +42,10 @@ class ModelFinderTest < Minitest::Test
     assert_equal "could not find ModelFinderTest::User with id=99", error.message
   end
 
-  def test_where_returns_matching_models_as_an_array
+  def test_where_returns_matching_models_as_a_relation
     users = User.where(role: "member")
 
+    assert_instance_of Acrc::Relation, users
     assert_equal ["Bob", "Carol"], users.map(&:name)
     assert users.all? { |user| user.is_a?(User) }
   end

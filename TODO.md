@@ -151,11 +151,11 @@ Questions to answer:
 
 ### 6. Relation And Query Composition
 
-- [ ] Introduce a relation-like query object when arrays become insufficient.
+- [x] Introduce a relation-like query object when arrays become insufficient.
 - [ ] Compose `where`, `order`, `limit`, and `select`.
-- [ ] Delay SQL execution until records are needed.
-- [ ] Decide when query objects are immutable.
-- [ ] Add tests that show when SQL is generated and executed.
+- [x] Delay SQL execution until records are needed.
+- [x] Decide when query objects are immutable.
+- [x] Add tests that show when SQL is generated and executed.
 
 Questions to answer:
 
@@ -327,3 +327,8 @@ changes.
 - Documented the destroy persistence boundary in
   `docs/persistence-destroy.md`.
 - Documented stale row detection in `docs/stale-records.md`.
+- Added `Acrc::Relation` as the first lazy query object. `Model.where` now
+  returns an unloaded relation, relations compose with immutable `where` calls,
+  and SQL executes when records are enumerated.
+- Documented relation query composition in
+  `docs/relation-query-composition.md`.
