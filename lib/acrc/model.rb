@@ -163,10 +163,13 @@ module Acrc
       @attributes = self.class.send(:type_cast_attributes, self.class.send(:stringify_keys, attributes))
       @original_attributes = persisted ? @attributes.dup : {}
       @new_record = !persisted
+      @destroyed = false
       define_attribute_methods
     end
 
     def save
+      raise DestroyedRecordError, "cannot save a destroyed record" if destroyed?
+
       if new_record?
         insert
       else
@@ -180,7 +183,17 @@ module Acrc
     end
 
     def persisted?
-      !new_record?
+      !new_record? && !destroyed?
+    end
+
+    def destroyed?
+      @destroyed
+    end
+
+    def destroy
+      delete
+      mark_destroyed
+      self
     end
 
     def [](name)
@@ -215,6 +228,23 @@ module Acrc
     end
 
     private
+
+    def delete
+      return if new_record?
+
+      adapter = self.class.connection
+      raise ConfigurationError, "#{self.class.send(:model_name)} connection is not configured" unless adapter
+
+      primary_key = self.class.primary_key
+      primary_key_value = @attributes[primary_key]
+      raise UnknownAttributeError, "unknown attribute: #{primary_key}" if primary_key_value.nil?
+
+      adapter.execute(
+        "DELETE FROM #{table_identifier} " \
+        "WHERE #{self.class.send(:sql_identifier, primary_key, "primary key")} = ?",
+        [primary_key_value]
+      )
+    end
 
     def insert
       adapter = self.class.connection
@@ -290,6 +320,13 @@ module Acrc
 
     def mark_persisted
       @new_record = false
+      @destroyed = false
+      @original_attributes = @attributes.dup
+    end
+
+    def mark_destroyed
+      @new_record = false
+      @destroyed = true
       @original_attributes = @attributes.dup
     end
 

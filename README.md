@@ -99,8 +99,8 @@ The detailed learning-project operating pattern is documented in
 ## Running the Current ORM
 
 The current implementation has a minimal SQLite adapter, model hydration, a
-small finder API, explicit attribute type casting, insert persistence, and
-dirty-tracked updates.
+small finder API, explicit attribute type casting, insert/update persistence,
+dirty tracking, and destroy behavior.
 
 Run the tests:
 
@@ -145,6 +145,12 @@ Run a small update example:
 bundle exec ruby -Ilib -e 'require "acrc"; db = Acrc::SQLiteAdapter.new(":memory:"); db.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)"); db.execute("INSERT INTO users (name) VALUES (?)", ["Ruby"]); class User < Acrc::Model; table_name "users"; attribute :id, :integer; end; User.connection db; user = User.find(1); user.name = "Acrc"; user.save; p User.find(1).name; db.close'
 ```
 
+Run a small destroy example:
+
+```sh
+bundle exec ruby -Ilib -e 'require "acrc"; db = Acrc::SQLiteAdapter.new(":memory:"); db.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)"); db.execute("INSERT INTO users (name) VALUES (?)", ["Ruby"]); class User < Acrc::Model; table_name "users"; attribute :id, :integer; end; User.connection db; user = User.find(1); user.destroy; p [user.destroyed?, User.where(id: 1).length]; db.close'
+```
+
 The adapter opens a SQLite database, executes SQL with bind parameters, and
 returns result rows as hashes keyed by column name strings. `Acrc::Model` can
 hydrate one of those rows into a Ruby object with readable attributes. `find`
@@ -152,7 +158,8 @@ and `where` connect model metadata to SQL execution, validate SQL identifiers,
 and bind user values. Declared attributes are cast during hydration so model
 readers return Ruby-friendly values. `save` can insert new records and store a
 generated SQLite primary key back on the model. Persisted records track changes
-and `save` updates changed columns.
+and `save` updates changed columns. `destroy` deletes the row and marks the
+object destroyed.
 
 ## Project Documents
 
@@ -168,3 +175,5 @@ and `save` updates changed columns.
 - `docs/persistence-insert.md`: notes on the first new-record insert path.
 - `docs/persistence-update.md`: notes on dirty tracking and existing-record
   updates.
+- `docs/persistence-destroy.md`: notes on delete behavior and destroyed object
+  state.

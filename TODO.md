@@ -136,10 +136,11 @@ Questions to answer:
 - [x] Track changed attributes.
 - [x] Generate `INSERT` statements with bind parameters.
 - [x] Generate `UPDATE` statements with bind parameters.
-- [ ] Implement `destroy` or delete behavior if useful.
+- [x] Implement `destroy` or delete behavior if useful.
 - [x] Add tests for insert behavior.
 - [x] Add tests for update behavior.
-- [ ] Add tests for delete and stale object assumptions.
+- [x] Add tests for delete behavior.
+- [ ] Add tests for stale object assumptions.
 
 Questions to answer:
 
@@ -315,3 +316,10 @@ changes.
   `docs/persistence-insert.md`.
 - Documented the update and dirty-tracking boundary in
   `docs/persistence-update.md`.
+- Added `destroy` for persisted records. It deletes by primary key, marks the
+  object `destroyed?`, and leaves loaded attributes readable while making
+  `persisted?` false.
+- Stale row detection, affected-row checks, dependent association behavior, and
+  destroy callbacks remain intentionally deferred.
+- Documented the destroy persistence boundary in
+  `docs/persistence-destroy.md`.
