@@ -20,8 +20,7 @@ user.save
 
 1. `User.new(...)` casts declared attributes and marks the object as a new
    record.
-2. `save` rejects persisted records for now because update behavior has not
-   been implemented yet.
+2. Because the object is a new record, `save` chooses the insert path.
 3. The model builds an `INSERT` statement from its current attributes.
 4. Attribute values are passed as bind parameters.
 5. If the primary key was not provided, the generated SQLite row id is stored
@@ -49,9 +48,8 @@ User.new("id" => 10, "name" => "Alice").save
 
 ## Intentional Limitations
 
-- Updating existing records is not implemented yet.
-- Dirty tracking is not implemented yet.
-- There are no attribute writers yet.
+- Updating existing records is documented separately in
+  `docs/persistence-update.md`.
 - There are no validations or callbacks yet.
 - Insert column names are validated, not quoted.
 - Generated primary key handling currently depends on SQLite adapter behavior.

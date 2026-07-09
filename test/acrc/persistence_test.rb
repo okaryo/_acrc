@@ -87,14 +87,74 @@ class PersistenceTest < Minitest::Test
     assert_equal "model connection is not configured", error.message
   end
 
-  def test_save_on_persisted_records_is_deferred
+  def test_save_updates_persisted_records
     user = User.new("name" => "Alice")
     user.save
 
-    error = assert_raises(Acrc::NotImplementedError) do
+    user.name = "Bob"
+    user.save
+
+    assert_equal [{ "name" => "Bob" }], @adapter.execute("SELECT name FROM users WHERE id = ?", [user.id])
+  end
+
+  def test_writer_tracks_changes_on_persisted_records
+    user = User.new("name" => "Alice", "age" => 42)
+    user.save
+
+    user.name = "Bob"
+    user.age = "43"
+
+    assert user.changed?
+    assert_equal(
+      { "name" => ["Alice", "Bob"], "age" => [42, 43] },
+      user.changes
+    )
+  end
+
+  def test_save_updates_only_changed_attributes_and_resets_dirty_state
+    user = User.new("name" => "Alice", "age" => 42)
+    user.save
+
+    user.name = "Bob"
+    user.save
+
+    assert_equal [{ "name" => "Bob", "age" => 42 }], @adapter.execute("SELECT name, age FROM users")
+    refute user.changed?
+    assert_equal({ "id" => 1, "name" => "Bob", "age" => 42 }, user.original_attributes)
+  end
+
+  def test_save_without_changes_keeps_persisted_record_unchanged
+    user = User.new("name" => "Alice", "age" => 42)
+    user.save
+
+    assert_equal true, user.save
+
+    assert_equal [{ "name" => "Alice", "age" => 42 }], @adapter.execute("SELECT name, age FROM users")
+    refute user.changed?
+  end
+
+  def test_update_uses_bind_parameters_for_changed_values
+    user = User.new("name" => "Alice", "age" => 42)
+    user.save
+    suspicious_name = "Bob', age = 100 --"
+
+    user.name = suspicious_name
+    user.save
+
+    assert_equal(
+      [{ "name" => suspicious_name, "age" => 42 }],
+      @adapter.execute("SELECT name, age FROM users WHERE id = ?", [user.id])
+    )
+  end
+
+  def test_update_requires_a_primary_key_value
+    user = User.hydrate("name" => "Alice", "age" => 42)
+    user.name = "Bob"
+
+    error = assert_raises(Acrc::UnknownAttributeError) do
       user.save
     end
 
-    assert_equal "updating existing records is not implemented yet", error.message
+    assert_equal "unknown attribute: id", error.message
   end
 end

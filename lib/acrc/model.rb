@@ -163,13 +163,15 @@ module Acrc
       @attributes = self.class.send(:type_cast_attributes, self.class.send(:stringify_keys, attributes))
       @original_attributes = persisted ? @attributes.dup : {}
       @new_record = !persisted
-      define_attribute_readers
+      define_attribute_methods
     end
 
     def save
-      raise NotImplementedError, "updating existing records is not implemented yet" unless new_record?
-
-      insert
+      if new_record?
+        insert
+      else
+        update
+      end
       true
     end
 
@@ -188,12 +190,28 @@ module Acrc
       raise UnknownAttributeError, "unknown attribute: #{key}"
     end
 
+    def []=(name, value)
+      key = name.to_s
+      @attributes[key] = self.class.send(:type_cast_value, key, value)
+      define_attribute_methods
+    end
+
     def attributes
       @attributes.dup
     end
 
     def original_attributes
       @original_attributes.dup
+    end
+
+    def changed?
+      !changes.empty?
+    end
+
+    def changes
+      changed_attribute_names.each_with_object({}) do |name, changed|
+        changed[name] = [@original_attributes[name], @attributes[name]]
+      end
     end
 
     private
@@ -218,9 +236,43 @@ module Acrc
       mark_persisted
     end
 
+    def update
+      adapter = self.class.connection
+      raise ConfigurationError, "#{self.class.send(:model_name)} connection is not configured" unless adapter
+
+      update_attributes = attributes_for_update
+      return if update_attributes.empty?
+
+      primary_key = self.class.primary_key
+      primary_key_value = @attributes[primary_key]
+      raise UnknownAttributeError, "unknown attribute: #{primary_key}" if primary_key_value.nil?
+
+      assignments = update_attributes.keys.map do |name|
+        "#{self.class.send(:sql_identifier, name, "column name")} = ?"
+      end
+
+      adapter.execute(
+        "UPDATE #{table_identifier} SET #{assignments.join(", ")} " \
+        "WHERE #{self.class.send(:sql_identifier, primary_key, "primary key")} = ?",
+        update_attributes.values + [primary_key_value]
+      )
+      mark_persisted
+    end
+
     def attributes_for_insert
       primary_key = self.class.primary_key
       @attributes.reject { |name, value| name == primary_key && value.nil? }
+    end
+
+    def attributes_for_update
+      primary_key = self.class.primary_key
+      changed_attribute_names.each_with_object({}) do |name, values|
+        values[name] = @attributes[name] unless name == primary_key
+      end
+    end
+
+    def changed_attribute_names
+      @attributes.keys.select { |name| @original_attributes[name] != @attributes[name] }
     end
 
     def table_identifier
@@ -233,7 +285,7 @@ module Acrc
       return unless adapter.respond_to?(:last_insert_row_id)
 
       @attributes[primary_key] = self.class.send(:type_cast_value, primary_key, adapter.last_insert_row_id)
-      define_attribute_readers
+      define_attribute_methods
     end
 
     def mark_persisted
@@ -241,12 +293,14 @@ module Acrc
       @original_attributes = @attributes.dup
     end
 
-    def define_attribute_readers
+    def define_attribute_methods
       @attributes.each_key do |name|
         next unless self.class.send(:safe_reader_name?, name)
-        next if respond_to?(name)
 
-        define_singleton_method(name) { self[name] }
+        define_singleton_method(name) { self[name] } unless respond_to?(name)
+
+        writer_name = "#{name}="
+        define_singleton_method(writer_name) { |value| self[name] = value } unless respond_to?(writer_name)
       end
     end
   end

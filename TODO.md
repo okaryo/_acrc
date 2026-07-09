@@ -132,13 +132,14 @@ Questions to answer:
 
 - [x] Add new-record state.
 - [x] Implement `save` for inserts.
-- [ ] Implement `save` or `update` for existing rows.
-- [ ] Track changed attributes.
+- [x] Implement `save` or `update` for existing rows.
+- [x] Track changed attributes.
 - [x] Generate `INSERT` statements with bind parameters.
-- [ ] Generate `UPDATE` statements with bind parameters.
+- [x] Generate `UPDATE` statements with bind parameters.
 - [ ] Implement `destroy` or delete behavior if useful.
 - [x] Add tests for insert behavior.
-- [ ] Add tests for update, delete, and stale object assumptions.
+- [x] Add tests for update behavior.
+- [ ] Add tests for delete and stale object assumptions.
 
 Questions to answer:
 
@@ -305,7 +306,12 @@ changes.
   instances start as `new_record?`, hydrated instances start as `persisted?`,
   and successful inserts store the generated SQLite primary key back on the
   model.
-- Existing-record update, dirty tracking, delete, validations, and callbacks
-  remain intentionally deferred.
+- Added attribute writers, `changed?`, `changes`, and `save` for existing
+  records. Updates write only changed columns, bind changed values, and reset
+  `original_attributes` after a successful update.
+- Delete, stale row detection, validations, and callbacks remain intentionally
+  deferred.
 - Documented the first insert persistence boundary in
   `docs/persistence-insert.md`.
+- Documented the update and dirty-tracking boundary in
+  `docs/persistence-update.md`.
