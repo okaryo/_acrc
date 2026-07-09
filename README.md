@@ -98,8 +98,8 @@ The detailed learning-project operating pattern is documented in
 
 ## Running the Current ORM
 
-The current implementation has a minimal SQLite adapter and a small model
-hydration layer.
+The current implementation has a minimal SQLite adapter, model hydration, and a
+small finder API.
 
 Run the tests:
 
@@ -119,10 +119,17 @@ Run a small hydration example:
 ruby -Ilib -e 'require "acrc"; class User < Acrc::Model; table_name "users"; end; user = User.hydrate("id" => 1, "name" => "Ruby"); puts user.name'
 ```
 
+Run a small finder example:
+
+```sh
+ruby -Ilib -e 'require "acrc"; db = Acrc::SQLiteAdapter.new(":memory:"); db.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)"); db.execute("INSERT INTO users (name) VALUES (?)", ["Ruby"]); class User < Acrc::Model; table_name "users"; end; User.connection db; puts User.find(1).name; db.close'
+```
+
 The adapter opens a SQLite database, executes SQL with bind parameters, and
 returns result rows as hashes keyed by column name strings. `Acrc::Model` can
-hydrate one of those rows into a Ruby object with readable attributes. There is
-no finder or query API yet.
+hydrate one of those rows into a Ruby object with readable attributes. `find`
+and `where` connect model metadata to SQL execution, validate SQL identifiers,
+and bind user values.
 
 ## Project Documents
 
@@ -132,3 +139,4 @@ no finder or query API yet.
 - `TODO.md`: living learning roadmap and progress tracker.
 - `docs/sql-execution.md`: notes on the first SQLite SQL execution boundary.
 - `docs/model-hydration.md`: notes on the first row-to-model mapping boundary.
+- `docs/finder-api.md`: notes on the first model query API boundary.

@@ -98,13 +98,13 @@ Questions to answer:
 
 ### 3. Minimal Finder API
 
-- [ ] Implement `find(id)`.
-- [ ] Decide behavior when a row is not found.
-- [ ] Implement a minimal `where(column: value)` path.
-- [ ] Restrict or validate column names used in generated SQL.
-- [ ] Return one model, an array of models, or a relation-like object
+- [x] Implement `find(id)`.
+- [x] Decide behavior when a row is not found.
+- [x] Implement a minimal `where(column: value)` path.
+- [x] Restrict or validate column names used in generated SQL.
+- [x] Return one model, an array of models, or a relation-like object
   intentionally.
-- [ ] Add tests for successful lookup, missing rows, and unsafe values.
+- [x] Add tests for successful lookup, missing rows, and unsafe values.
 
 Questions to answer:
 
@@ -285,3 +285,9 @@ changes.
   `NoMethodError` behavior.
 - Documented the first table-to-object mapping boundary in
   `docs/model-hydration.md`.
+- Added the first model query API. Models now hold a class-level adapter,
+  `find(id)` returns one hydrated model or raises `Acrc::RecordNotFound`, and
+  `where(...)` returns an eager array of hydrated models.
+- Decided to validate SQL identifiers with a narrow identifier regex and bind
+  only values. This keeps the value-versus-identifier safety boundary visible.
+- Documented the first finder API boundary in `docs/finder-api.md`.
