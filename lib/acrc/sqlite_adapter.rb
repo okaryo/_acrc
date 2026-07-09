@@ -19,6 +19,10 @@ module Acrc
       database.last_insert_row_id
     end
 
+    def changes
+      database.changes
+    end
+
     def close
       database.close unless database.closed?
     end

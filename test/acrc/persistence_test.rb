@@ -203,4 +203,32 @@ class PersistenceTest < Minitest::Test
 
     assert_equal "cannot save a destroyed record", error.message
   end
+
+  def test_save_detects_a_stale_record_when_update_affects_no_rows
+    user = User.new("name" => "Alice")
+    user.save
+    @adapter.execute("DELETE FROM users WHERE id = ?", [user.id])
+
+    user.name = "Bob"
+    error = assert_raises(Acrc::StaleRecordError) do
+      user.save
+    end
+
+    assert_equal "attempted to update or delete a stale PersistenceTest::User", error.message
+    assert user.changed?
+  end
+
+  def test_destroy_detects_a_stale_record_when_delete_affects_no_rows
+    user = User.new("name" => "Alice")
+    user.save
+    @adapter.execute("DELETE FROM users WHERE id = ?", [user.id])
+
+    error = assert_raises(Acrc::StaleRecordError) do
+      user.destroy
+    end
+
+    assert_equal "attempted to update or delete a stale PersistenceTest::User", error.message
+    assert user.persisted?
+    refute user.destroyed?
+  end
 end

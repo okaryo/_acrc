@@ -177,3 +177,5 @@ object destroyed.
   updates.
 - `docs/persistence-destroy.md`: notes on delete behavior and destroyed object
   state.
+- `docs/stale-records.md`: notes on affected-row checks and stale record
+  detection.

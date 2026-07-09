@@ -140,7 +140,7 @@ Questions to answer:
 - [x] Add tests for insert behavior.
 - [x] Add tests for update behavior.
 - [x] Add tests for delete behavior.
-- [ ] Add tests for stale object assumptions.
+- [x] Add tests for stale object assumptions.
 
 Questions to answer:
 
@@ -319,7 +319,11 @@ changes.
 - Added `destroy` for persisted records. It deletes by primary key, marks the
   object `destroyed?`, and leaves loaded attributes readable while making
   `persisted?` false.
-- Stale row detection, affected-row checks, dependent association behavior, and
-  destroy callbacks remain intentionally deferred.
+- Added affected-row checks for updates and deletes. If SQLite reports zero
+  changed rows, `_acrc` raises `Acrc::StaleRecordError` and leaves the model's
+  in-memory state unchanged.
+- Optimistic locking, dependent association behavior, and destroy callbacks
+  remain intentionally deferred.
 - Documented the destroy persistence boundary in
   `docs/persistence-destroy.md`.
+- Documented stale row detection in `docs/stale-records.md`.

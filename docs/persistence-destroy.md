@@ -36,8 +36,7 @@ Saving a destroyed record raises `Acrc::DestroyedRecordError`.
 
 ## Intentional Limitations
 
-- There is no affected-row count check yet.
-- Destroying a row that was already deleted elsewhere is not detected yet.
+- Stale row detection is documented separately in `docs/stale-records.md`.
 - There are no callbacks such as `before_destroy` or `after_destroy`.
 - There is no association-dependent deletion behavior.
 

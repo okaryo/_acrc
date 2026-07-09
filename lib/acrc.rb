@@ -8,6 +8,7 @@ module Acrc
   class InvalidIdentifierError < Error; end
   class NotImplementedError < Error; end
   class RecordNotFound < Error; end
+  class StaleRecordError < Error; end
   class TypeCastError < Error; end
   class UnknownAttributeError < Error; end
   class UnknownTypeError < Error; end

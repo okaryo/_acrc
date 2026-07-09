@@ -45,8 +45,7 @@ returns `true`.
 
 ## Intentional Limitations
 
-- There is no stale row detection yet.
-- There is no affected-row count check yet.
+- Stale row detection is documented separately in `docs/stale-records.md`.
 - The primary key itself is not updated.
 - There are still no validations or callbacks.
 - Attribute writers are generated from currently known attributes.

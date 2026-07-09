@@ -244,6 +244,7 @@ module Acrc
         "WHERE #{self.class.send(:sql_identifier, primary_key, "primary key")} = ?",
         [primary_key_value]
       )
+      ensure_row_was_changed(adapter)
     end
 
     def insert
@@ -286,6 +287,7 @@ module Acrc
         "WHERE #{self.class.send(:sql_identifier, primary_key, "primary key")} = ?",
         update_attributes.values + [primary_key_value]
       )
+      ensure_row_was_changed(adapter)
       mark_persisted
     end
 
@@ -316,6 +318,13 @@ module Acrc
 
       @attributes[primary_key] = self.class.send(:type_cast_value, primary_key, adapter.last_insert_row_id)
       define_attribute_methods
+    end
+
+    def ensure_row_was_changed(adapter)
+      return unless adapter.respond_to?(:changes)
+      return unless adapter.changes.zero?
+
+      raise StaleRecordError, "attempted to update or delete a stale #{self.class.send(:model_name)}"
     end
 
     def mark_persisted
