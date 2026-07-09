@@ -15,6 +15,10 @@ module Acrc
       raise DatabaseError, e.message
     end
 
+    def last_insert_row_id
+      database.last_insert_row_id
+    end
+
     def close
       database.close unless database.closed?
     end

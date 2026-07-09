@@ -5,6 +5,7 @@ module Acrc
   class DatabaseError < Error; end
   class ConfigurationError < Error; end
   class InvalidIdentifierError < Error; end
+  class NotImplementedError < Error; end
   class RecordNotFound < Error; end
   class TypeCastError < Error; end
   class UnknownAttributeError < Error; end

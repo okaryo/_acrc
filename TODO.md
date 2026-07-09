@@ -130,13 +130,15 @@ Questions to answer:
 
 ### 5. Persistence
 
-- [ ] Add new-record state.
-- [ ] Implement `save` for inserts.
+- [x] Add new-record state.
+- [x] Implement `save` for inserts.
 - [ ] Implement `save` or `update` for existing rows.
 - [ ] Track changed attributes.
-- [ ] Generate `INSERT` and `UPDATE` statements with bind parameters.
+- [x] Generate `INSERT` statements with bind parameters.
+- [ ] Generate `UPDATE` statements with bind parameters.
 - [ ] Implement `destroy` or delete behavior if useful.
-- [ ] Add tests for insert, update, delete, and stale object assumptions.
+- [x] Add tests for insert behavior.
+- [ ] Add tests for update, delete, and stale object assumptions.
 
 Questions to answer:
 
@@ -299,3 +301,11 @@ changes.
   tracking step.
 - Documented the first type-casting boundary in
   `docs/attributes-and-type-casting.md`.
+- Added new-record state and the first `save` path for inserts. New model
+  instances start as `new_record?`, hydrated instances start as `persisted?`,
+  and successful inserts store the generated SQLite primary key back on the
+  model.
+- Existing-record update, dirty tracking, delete, validations, and callbacks
+  remain intentionally deferred.
+- Documented the first insert persistence boundary in
+  `docs/persistence-insert.md`.

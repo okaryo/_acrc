@@ -99,36 +99,44 @@ The detailed learning-project operating pattern is documented in
 ## Running the Current ORM
 
 The current implementation has a minimal SQLite adapter, model hydration, a
-small finder API, and explicit attribute type casting.
+small finder API, explicit attribute type casting, and insert persistence for
+new records.
 
 Run the tests:
 
 ```sh
-ruby -Itest -Ilib -e 'Dir["test/**/*_test.rb"].sort.each { |path| load path }'
+bundle install
+bundle exec ruby -Itest -Ilib -e 'Dir["test/**/*_test.rb"].sort.each { |path| load path }'
 ```
 
 Run a small query example:
 
 ```sh
-ruby -Ilib -e 'require "acrc"; db = Acrc::SQLiteAdapter.new(":memory:"); db.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)"); db.execute("INSERT INTO users (name) VALUES (?)", ["Ruby"]); p db.execute("SELECT id, name FROM users WHERE name = ?", ["Ruby"]); db.close'
+bundle exec ruby -Ilib -e 'require "acrc"; db = Acrc::SQLiteAdapter.new(":memory:"); db.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)"); db.execute("INSERT INTO users (name) VALUES (?)", ["Ruby"]); p db.execute("SELECT id, name FROM users WHERE name = ?", ["Ruby"]); db.close'
 ```
 
 Run a small hydration example:
 
 ```sh
-ruby -Ilib -e 'require "acrc"; class User < Acrc::Model; table_name "users"; end; user = User.hydrate("id" => 1, "name" => "Ruby"); puts user.name'
+bundle exec ruby -Ilib -e 'require "acrc"; class User < Acrc::Model; table_name "users"; end; user = User.hydrate("id" => 1, "name" => "Ruby"); puts user.name'
 ```
 
 Run a small finder example:
 
 ```sh
-ruby -Ilib -e 'require "acrc"; db = Acrc::SQLiteAdapter.new(":memory:"); db.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)"); db.execute("INSERT INTO users (name) VALUES (?)", ["Ruby"]); class User < Acrc::Model; table_name "users"; end; User.connection db; puts User.find(1).name; db.close'
+bundle exec ruby -Ilib -e 'require "acrc"; db = Acrc::SQLiteAdapter.new(":memory:"); db.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)"); db.execute("INSERT INTO users (name) VALUES (?)", ["Ruby"]); class User < Acrc::Model; table_name "users"; end; User.connection db; puts User.find(1).name; db.close'
 ```
 
 Run a small type-casting example:
 
 ```sh
-ruby -Ilib -e 'require "acrc"; class User < Acrc::Model; attribute :age, :integer; attribute :admin, :boolean; end; user = User.hydrate("age" => "42", "admin" => "true"); p [user.age, user.admin]'
+bundle exec ruby -Ilib -e 'require "acrc"; class User < Acrc::Model; attribute :age, :integer; attribute :admin, :boolean; end; user = User.hydrate("age" => "42", "admin" => "true"); p [user.age, user.admin]'
+```
+
+Run a small insert example:
+
+```sh
+bundle exec ruby -Ilib -e 'require "acrc"; db = Acrc::SQLiteAdapter.new(":memory:"); db.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)"); class User < Acrc::Model; table_name "users"; attribute :id, :integer; end; User.connection db; user = User.new("name" => "Ruby"); user.save; p [user.id, User.find(user.id).name]; db.close'
 ```
 
 The adapter opens a SQLite database, executes SQL with bind parameters, and
@@ -136,7 +144,8 @@ returns result rows as hashes keyed by column name strings. `Acrc::Model` can
 hydrate one of those rows into a Ruby object with readable attributes. `find`
 and `where` connect model metadata to SQL execution, validate SQL identifiers,
 and bind user values. Declared attributes are cast during hydration so model
-readers return Ruby-friendly values.
+readers return Ruby-friendly values. `save` can insert new records and store a
+generated SQLite primary key back on the model.
 
 ## Project Documents
 
@@ -149,3 +158,4 @@ readers return Ruby-friendly values.
 - `docs/finder-api.md`: notes on the first model query API boundary.
 - `docs/attributes-and-type-casting.md`: notes on explicit attribute type
   declarations and hydration-time casting.
+- `docs/persistence-insert.md`: notes on the first new-record insert path.

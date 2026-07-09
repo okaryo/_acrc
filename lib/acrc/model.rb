@@ -75,8 +75,7 @@ module Acrc
 
     def self.hydrate(row)
       attributes = stringify_keys(row)
-      attributes = type_cast_attributes(attributes)
-      new(attributes)
+      new(attributes, persisted: true)
     end
 
     def self.execute_select(sql, binds)
@@ -159,10 +158,27 @@ module Acrc
     end
     private_class_method :safe_reader_name?
 
-    def initialize(attributes)
-      @attributes = self.class.send(:stringify_keys, attributes)
-      @original_attributes = @attributes.dup
+    def initialize(attributes = {}, options = {})
+      persisted = options.fetch(:persisted, false)
+      @attributes = self.class.send(:type_cast_attributes, self.class.send(:stringify_keys, attributes))
+      @original_attributes = persisted ? @attributes.dup : {}
+      @new_record = !persisted
       define_attribute_readers
+    end
+
+    def save
+      raise NotImplementedError, "updating existing records is not implemented yet" unless new_record?
+
+      insert
+      true
+    end
+
+    def new_record?
+      @new_record
+    end
+
+    def persisted?
+      !new_record?
     end
 
     def [](name)
@@ -181,6 +197,49 @@ module Acrc
     end
 
     private
+
+    def insert
+      adapter = self.class.connection
+      raise ConfigurationError, "#{self.class.send(:model_name)} connection is not configured" unless adapter
+
+      insert_attributes = attributes_for_insert
+      if insert_attributes.empty?
+        adapter.execute("INSERT INTO #{table_identifier} DEFAULT VALUES")
+      else
+        columns = insert_attributes.keys.map { |name| self.class.send(:sql_identifier, name, "column name") }
+        placeholders = (["?"] * columns.length).join(", ")
+        adapter.execute(
+          "INSERT INTO #{table_identifier} (#{columns.join(", ")}) VALUES (#{placeholders})",
+          insert_attributes.values
+        )
+      end
+
+      store_generated_primary_key(adapter)
+      mark_persisted
+    end
+
+    def attributes_for_insert
+      primary_key = self.class.primary_key
+      @attributes.reject { |name, value| name == primary_key && value.nil? }
+    end
+
+    def table_identifier
+      self.class.send(:sql_identifier, self.class.table_name, "table name")
+    end
+
+    def store_generated_primary_key(adapter)
+      primary_key = self.class.primary_key
+      return if @attributes.key?(primary_key) && !@attributes[primary_key].nil?
+      return unless adapter.respond_to?(:last_insert_row_id)
+
+      @attributes[primary_key] = self.class.send(:type_cast_value, primary_key, adapter.last_insert_row_id)
+      define_attribute_readers
+    end
+
+    def mark_persisted
+      @new_record = false
+      @original_attributes = @attributes.dup
+    end
 
     def define_attribute_readers
       @attributes.each_key do |name|
