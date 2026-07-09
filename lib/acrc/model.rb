@@ -1,7 +1,11 @@
 # frozen_string_literal: true
 
+require "time"
+
 module Acrc
   class Model
+    SUPPORTED_ATTRIBUTE_TYPES = [:integer, :float, :string, :boolean, :time].freeze
+
     def self.table_name(value = nil)
       @table_name = value.to_s if value
       @table_name
@@ -15,6 +19,26 @@ module Acrc
     def self.connection(adapter = nil)
       @connection = adapter if adapter
       @connection
+    end
+
+    def self.attribute(name, type)
+      type = type.to_sym
+      unless SUPPORTED_ATTRIBUTE_TYPES.include?(type)
+        raise UnknownTypeError, "unknown attribute type: #{type.inspect}"
+      end
+
+      local_attribute_types[name.to_s] = type
+    end
+
+    def self.attribute_types
+      parent_types =
+        if superclass.respond_to?(:attribute_types)
+          superclass.attribute_types
+        else
+          {}
+        end
+
+      parent_types.merge(local_attribute_types)
     end
 
     def self.find(id)
@@ -51,6 +75,7 @@ module Acrc
 
     def self.hydrate(row)
       attributes = stringify_keys(row)
+      attributes = type_cast_attributes(attributes)
       new(attributes)
     end
 
@@ -77,6 +102,51 @@ module Acrc
     end
     private_class_method :model_name
 
+    def self.local_attribute_types
+      @attribute_types ||= {}
+    end
+    private_class_method :local_attribute_types
+
+    def self.type_cast_attributes(attributes)
+      attributes.each_with_object({}) do |(name, value), casted|
+        casted[name] = type_cast_value(name, value)
+      end
+    end
+    private_class_method :type_cast_attributes
+
+    def self.type_cast_value(name, value)
+      type = attribute_types[name]
+      return value unless type
+      return nil if value.nil?
+
+      case type
+      when :integer
+        Integer(value)
+      when :float
+        Float(value)
+      when :string
+        value.to_s
+      when :boolean
+        type_cast_boolean(name, value)
+      when :time
+        value.is_a?(Time) ? value : Time.parse(value.to_s)
+      else
+        value
+      end
+    rescue ArgumentError, TypeError
+      raise TypeCastError, "could not cast #{name} to #{type}: #{value.inspect}"
+    end
+    private_class_method :type_cast_value
+
+    def self.type_cast_boolean(name, value)
+      return value if value == true || value == false
+      return true if [1, "1", "true", "t", "yes"].include?(value)
+      return false if [0, "0", "false", "f", "no"].include?(value)
+
+      raise TypeCastError, "could not cast #{name} to boolean: #{value.inspect}"
+    end
+    private_class_method :type_cast_boolean
+
     def self.stringify_keys(row)
       row.each_with_object({}) do |(key, value), attributes|
         attributes[key.to_s] = value
@@ -91,6 +161,7 @@ module Acrc
 
     def initialize(attributes)
       @attributes = self.class.send(:stringify_keys, attributes)
+      @original_attributes = @attributes.dup
       define_attribute_readers
     end
 
@@ -103,6 +174,10 @@ module Acrc
 
     def attributes
       @attributes.dup
+    end
+
+    def original_attributes
+      @original_attributes.dup
     end
 
     private

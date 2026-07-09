@@ -6,7 +6,9 @@ module Acrc
   class ConfigurationError < Error; end
   class InvalidIdentifierError < Error; end
   class RecordNotFound < Error; end
+  class TypeCastError < Error; end
   class UnknownAttributeError < Error; end
+  class UnknownTypeError < Error; end
 end
 
 require "acrc/model"

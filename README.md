@@ -98,8 +98,8 @@ The detailed learning-project operating pattern is documented in
 
 ## Running the Current ORM
 
-The current implementation has a minimal SQLite adapter, model hydration, and a
-small finder API.
+The current implementation has a minimal SQLite adapter, model hydration, a
+small finder API, and explicit attribute type casting.
 
 Run the tests:
 
@@ -125,11 +125,18 @@ Run a small finder example:
 ruby -Ilib -e 'require "acrc"; db = Acrc::SQLiteAdapter.new(":memory:"); db.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)"); db.execute("INSERT INTO users (name) VALUES (?)", ["Ruby"]); class User < Acrc::Model; table_name "users"; end; User.connection db; puts User.find(1).name; db.close'
 ```
 
+Run a small type-casting example:
+
+```sh
+ruby -Ilib -e 'require "acrc"; class User < Acrc::Model; attribute :age, :integer; attribute :admin, :boolean; end; user = User.hydrate("age" => "42", "admin" => "true"); p [user.age, user.admin]'
+```
+
 The adapter opens a SQLite database, executes SQL with bind parameters, and
 returns result rows as hashes keyed by column name strings. `Acrc::Model` can
 hydrate one of those rows into a Ruby object with readable attributes. `find`
 and `where` connect model metadata to SQL execution, validate SQL identifiers,
-and bind user values.
+and bind user values. Declared attributes are cast during hydration so model
+readers return Ruby-friendly values.
 
 ## Project Documents
 
@@ -140,3 +147,5 @@ and bind user values.
 - `docs/sql-execution.md`: notes on the first SQLite SQL execution boundary.
 - `docs/model-hydration.md`: notes on the first row-to-model mapping boundary.
 - `docs/finder-api.md`: notes on the first model query API boundary.
+- `docs/attributes-and-type-casting.md`: notes on explicit attribute type
+  declarations and hydration-time casting.

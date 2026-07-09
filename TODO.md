@@ -115,11 +115,11 @@ Questions to answer:
 
 ### 4. Attributes And Type Casting
 
-- [ ] Inspect or declare column metadata.
-- [ ] Cast integer, float, string, boolean, time, and nil values where useful.
-- [ ] Decide whether type casting happens during hydration or attribute read.
-- [ ] Preserve original values for later dirty tracking.
-- [ ] Document intentional type-casting limitations.
+- [x] Inspect or declare column metadata.
+- [x] Cast integer, float, string, boolean, time, and nil values where useful.
+- [x] Decide whether type casting happens during hydration or attribute read.
+- [x] Preserve original values for later dirty tracking.
+- [x] Document intentional type-casting limitations.
 
 Questions to answer:
 
@@ -291,3 +291,11 @@ changes.
 - Decided to validate SQL identifiers with a narrow identifier regex and bind
   only values. This keeps the value-versus-identifier safety boundary visible.
 - Documented the first finder API boundary in `docs/finder-api.md`.
+- Added explicit attribute declarations with `attribute :name, :type` for
+  `:integer`, `:float`, `:string`, `:boolean`, and `:time`.
+- Decided that declared attributes are cast during hydration, while undeclared
+  attributes keep the values returned by the database driver.
+- Added `original_attributes` as the casted loaded baseline for a future dirty
+  tracking step.
+- Documented the first type-casting boundary in
+  `docs/attributes-and-type-casting.md`.
