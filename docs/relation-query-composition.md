@@ -21,6 +21,9 @@ relation.to_a
 - model class
 - where conditions
 - bind values
+- selected columns
+- order clauses
+- limit value
 
 It executes only when records are needed through `to_a`, `each`, `map`, or
 another Enumerable method.
@@ -44,10 +47,27 @@ SELECT * FROM users WHERE role = ? AND name = ?
 
 Values are still passed as bind parameters.
 
+`order`, `limit`, and `select` also return new relations:
+
+```ruby
+User
+  .where(role: "member")
+  .order(name: :desc)
+  .limit(10)
+  .select(:id, :name)
+```
+
+The query is still not executed until records are needed.
+
+`select` changes which attributes are loaded. If a column is not selected, the
+hydrated model will not have a reader for that column.
+
 ## Intentional Limitations
 
 - Only equality `where` conditions are supported.
-- There is no `order`, `limit`, or `select` yet.
+- `order` supports only `:asc` and `:desc`.
+- `limit` supports only one non-negative integer.
+- `select` supports only simple column names.
 - Loaded records are cached inside the relation, but there is no reload API.
 - There is no SQL inspection API yet.
 

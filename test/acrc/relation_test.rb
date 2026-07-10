@@ -68,4 +68,65 @@ class RelationTest < Minitest::Test
 
     assert_equal ["Bob", "Carol"], User.where(role: "member").map(&:name)
   end
+
+  def test_order_sorts_records
+    names = User.all.order(name: :desc).map(&:name)
+
+    assert_equal ["Carol", "Bob", "Alice"], names
+  end
+
+  def test_limit_restricts_loaded_records
+    names = User.all.order(id: :asc).limit(2).map(&:name)
+
+    assert_equal ["Alice", "Bob"], names
+  end
+
+  def test_select_loads_only_selected_columns
+    users = User.where(role: "member").select(:id, :name).order(id: :asc).to_a
+
+    assert_equal ["Bob", "Carol"], users.map(&:name)
+    assert_equal [2, 3], users.map(&:id)
+    refute_respond_to users.first, :role
+    assert_raises(Acrc::UnknownAttributeError) { users.first[:role] }
+  end
+
+  def test_query_methods_compose_immutably
+    base = User.where(role: "member")
+    ordered = base.order(name: :desc)
+    limited = ordered.limit(1)
+
+    assert_equal ["Bob", "Carol"], base.map(&:name)
+    assert_equal ["Carol", "Bob"], ordered.map(&:name)
+    assert_equal ["Carol"], limited.map(&:name)
+  end
+
+  def test_order_rejects_unsafe_column_names
+    assert_raises(Acrc::InvalidIdentifierError) do
+      User.all.order("name DESC; DROP TABLE users" => :asc)
+    end
+  end
+
+  def test_order_rejects_unknown_directions
+    error = assert_raises(ArgumentError) do
+      User.all.order(name: :sideways)
+    end
+
+    assert_equal "order direction must be :asc or :desc", error.message
+  end
+
+  def test_limit_rejects_negative_values
+    error = assert_raises(ArgumentError) do
+      User.all.limit(-1)
+    end
+
+    assert_equal "limit must be a non-negative integer", error.message
+  end
+
+  def test_select_rejects_empty_columns
+    error = assert_raises(ArgumentError) do
+      User.all.select
+    end
+
+    assert_equal "select columns must not be empty", error.message
+  end
 end

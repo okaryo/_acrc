@@ -130,7 +130,7 @@ bundle exec ruby -Ilib -e 'require "acrc"; db = Acrc::SQLiteAdapter.new(":memory
 Run a small relation example:
 
 ```sh
-bundle exec ruby -Ilib -e 'require "acrc"; db = Acrc::SQLiteAdapter.new(":memory:"); db.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, role TEXT)"); db.execute("INSERT INTO users (name, role) VALUES (?, ?)", ["Ruby", "member"]); class User < Acrc::Model; table_name "users"; end; User.connection db; relation = User.where(role: "member"); p relation.loaded?; p relation.map(&:name); db.close'
+bundle exec ruby -Ilib -e 'require "acrc"; db = Acrc::SQLiteAdapter.new(":memory:"); db.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, role TEXT)"); db.execute("INSERT INTO users (name, role) VALUES (?, ?)", ["Ruby", "member"]); db.execute("INSERT INTO users (name, role) VALUES (?, ?)", ["Acrc", "member"]); class User < Acrc::Model; table_name "users"; end; User.connection db; relation = User.where(role: "member").order(name: :asc).limit(1).select(:id, :name); p relation.loaded?; p relation.map(&:name); db.close'
 ```
 
 Run a small type-casting example:
@@ -161,7 +161,8 @@ The adapter opens a SQLite database, executes SQL with bind parameters, and
 returns result rows as hashes keyed by column name strings. `Acrc::Model` can
 hydrate one of those rows into a Ruby object with readable attributes. `find`
 connects model metadata to SQL execution. `where` returns a lazy relation that
-can compose query conditions before loading records. Query generation validates
+can compose query conditions, ordering, limits, and selected columns before
+loading records. Query generation validates
 SQL identifiers and binds user values. Declared attributes are cast during
 hydration so model readers return Ruby-friendly values. `save` can insert new
 records and store a generated SQLite primary key back on the model. Persisted

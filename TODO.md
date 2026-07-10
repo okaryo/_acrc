@@ -152,7 +152,7 @@ Questions to answer:
 ### 6. Relation And Query Composition
 
 - [x] Introduce a relation-like query object when arrays become insufficient.
-- [ ] Compose `where`, `order`, `limit`, and `select`.
+- [x] Compose `where`, `order`, `limit`, and `select`.
 - [x] Delay SQL execution until records are needed.
 - [x] Decide when query objects are immutable.
 - [x] Add tests that show when SQL is generated and executed.
@@ -330,5 +330,8 @@ changes.
 - Added `Acrc::Relation` as the first lazy query object. `Model.where` now
   returns an unloaded relation, relations compose with immutable `where` calls,
   and SQL executes when records are enumerated.
+- Added relation `order`, `limit`, and `select`. These operations return new
+  relations, validate SQL identifiers or numeric limits, and remain lazy until
+  enumeration.
 - Documented relation query composition in
   `docs/relation-query-composition.md`.
