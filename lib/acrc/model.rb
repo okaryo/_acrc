@@ -53,8 +53,33 @@ module Acrc
       all.where(conditions)
     end
 
+    def self.select(*columns)
+      all.select(*columns)
+    end
+
     def self.all
       Relation.new(self)
+    end
+
+    def self.belongs_to(name, class_name:, foreign_key:)
+      association_name = name.to_s
+      foreign_key_name = foreign_key.to_s
+
+      define_method(association_name) do
+        foreign_key_value = self[foreign_key_name]
+        return nil if foreign_key_value.nil?
+
+        class_name.find(foreign_key_value)
+      end
+    end
+
+    def self.has_many(name, class_name:, foreign_key:)
+      association_name = name.to_s
+      foreign_key_name = foreign_key.to_s
+
+      define_method(association_name) do
+        class_name.where(foreign_key_name => self[self.class.primary_key])
+      end
     end
 
     def self.hydrate(row)

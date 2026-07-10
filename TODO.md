@@ -166,10 +166,10 @@ Questions to answer:
 
 ### 7. Associations
 
-- [ ] Implement a minimal `belongs_to`.
-- [ ] Implement a minimal `has_many`.
-- [ ] Decide foreign key naming conventions.
-- [ ] Decide lazy loading behavior for associated records.
+- [x] Implement a minimal `belongs_to`.
+- [x] Implement a minimal `has_many`.
+- [x] Decide foreign key naming conventions.
+- [x] Decide lazy loading behavior for associated records.
 - [ ] Observe and document N+1 query behavior.
 - [ ] Explore eager loading only after lazy associations are clear.
 
@@ -335,3 +335,10 @@ changes.
   enumeration.
 - Documented relation query composition in
   `docs/relation-query-composition.md`.
+- Added explicit `belongs_to`. It reads a configured foreign key and lazily
+  loads the associated record through the target model's `find`.
+- Added explicit `has_many`. It reads the source model's primary key and returns
+  a lazy relation scoped by the configured foreign key.
+- Deferred association caching, eager loading, inverse relationship behavior,
+  and N+1 query mitigation.
+- Documented the first association boundaries in `docs/associations.md`.

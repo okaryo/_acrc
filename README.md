@@ -100,7 +100,7 @@ The detailed learning-project operating pattern is documented in
 
 The current implementation has a minimal SQLite adapter, model hydration, lazy
 relations, explicit attribute type casting, insert/update persistence, dirty
-tracking, and destroy behavior.
+tracking, destroy behavior, and minimal `belongs_to` / `has_many` associations.
 
 Run the tests:
 
@@ -157,6 +157,12 @@ Run a small destroy example:
 bundle exec ruby -Ilib -e 'require "acrc"; db = Acrc::SQLiteAdapter.new(":memory:"); db.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)"); db.execute("INSERT INTO users (name) VALUES (?)", ["Ruby"]); class User < Acrc::Model; table_name "users"; attribute :id, :integer; end; User.connection db; user = User.find(1); user.destroy; p [user.destroyed?, User.where(id: 1).length]; db.close'
 ```
 
+Run a small association example:
+
+```sh
+bundle exec ruby -Ilib -e 'require "acrc"; db = Acrc::SQLiteAdapter.new(":memory:"); db.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)"); db.execute("CREATE TABLE posts (id INTEGER PRIMARY KEY, user_id INTEGER, title TEXT)"); db.execute("INSERT INTO users (name) VALUES (?)", ["Ruby"]); db.execute("INSERT INTO posts (user_id, title) VALUES (?, ?)", [1, "Hello"]); class User < Acrc::Model; table_name "users"; attribute :id, :integer; end; class Post < Acrc::Model; table_name "posts"; attribute :id, :integer; attribute :user_id, :integer; belongs_to :user, class_name: User, foreign_key: :user_id; end; User.has_many :posts, class_name: Post, foreign_key: :user_id; User.connection db; Post.connection db; p [Post.find(1).user.name, User.find(1).posts.map(&:title)]; db.close'
+```
+
 The adapter opens a SQLite database, executes SQL with bind parameters, and
 returns result rows as hashes keyed by column name strings. `Acrc::Model` can
 hydrate one of those rows into a Ruby object with readable attributes. `find`
@@ -167,7 +173,9 @@ SQL identifiers and binds user values. Declared attributes are cast during
 hydration so model readers return Ruby-friendly values. `save` can insert new
 records and store a generated SQLite primary key back on the model. Persisted
 records track changes and `save` updates changed columns. `destroy` deletes the
-row and marks the object destroyed.
+row and marks the object destroyed. `belongs_to` hides a primary-key lookup
+behind an association method. `has_many` returns a lazy relation for the
+associated collection.
 
 ## Project Documents
 
@@ -189,3 +197,5 @@ row and marks the object destroyed.
   detection.
 - `docs/relation-query-composition.md`: notes on lazy relations and query
   composition.
+- `docs/associations.md`: notes on the first `belongs_to` and `has_many`
+  associations.
