@@ -189,7 +189,8 @@ associated collection. The adapter query log makes the SQL hidden by lazy
 relations and associations inspectable. `preload(:user)` can batch a
 `belongs_to` association by loading related users with an `IN` query and storing
 them in each record's association cache. `transaction` wraps a block in
-`BEGIN`, `COMMIT`, and `ROLLBACK`.
+`BEGIN`, `COMMIT`, and `ROLLBACK`. SQLite constraint failures are wrapped as
+`Acrc::ConstraintError`.
 
 ## Project Documents
 

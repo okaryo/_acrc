@@ -16,6 +16,8 @@ module Acrc
     def execute(sql, binds = [])
       query_log << { sql: sql, binds: binds.dup }
       database.execute(sql, binds).map { |row| normalize_row(row) }
+    rescue SQLite3::ConstraintException => e
+      raise ConstraintError, e.message
     rescue SQLite3::Exception => e
       raise DatabaseError, e.message
     end

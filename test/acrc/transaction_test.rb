@@ -45,6 +45,18 @@ class TransactionTest < Minitest::Test
     assert_empty User.all.to_a
   end
 
+  def test_transaction_rolls_back_when_a_constraint_error_is_raised
+    error = assert_raises(Acrc::ConstraintError) do
+      User.transaction do
+        User.new("name" => "Alice").save
+        User.new("name" => nil).save
+      end
+    end
+
+    assert_match(/NOT NULL constraint failed/, error.message)
+    assert_empty User.all.to_a
+  end
+
   def test_transaction_returns_the_block_value
     result = User.transaction do
       User.new("name" => "Alice").save

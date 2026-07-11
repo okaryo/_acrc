@@ -44,6 +44,26 @@ class SQLiteAdapterTest < Minitest::Test
     assert_match(/missing_table/, error.message)
   end
 
+  def test_execute_wraps_sqlite_constraint_errors
+    error = assert_raises(Acrc::ConstraintError) do
+      @adapter.execute("INSERT INTO users (name) VALUES (?)", [nil])
+    end
+
+    assert_kind_of Acrc::DatabaseError, error
+    assert_match(/NOT NULL constraint failed/, error.message)
+  end
+
+  def test_execute_wraps_unique_constraint_errors
+    @adapter.execute("CREATE UNIQUE INDEX index_users_on_name ON users (name)")
+    @adapter.execute("INSERT INTO users (name) VALUES (?)", ["Alice"])
+
+    error = assert_raises(Acrc::ConstraintError) do
+      @adapter.execute("INSERT INTO users (name) VALUES (?)", ["Alice"])
+    end
+
+    assert_match(/UNIQUE constraint failed/, error.message)
+  end
+
   def test_execute_records_sql_and_binds_in_query_log
     @adapter.clear_query_log
 

@@ -186,7 +186,7 @@ Questions to answer:
 - [x] Commit successful transaction blocks.
 - [x] Roll back on exceptions.
 - [ ] Explore nested transactions or savepoints if useful.
-- [ ] Surface constraint errors clearly.
+- [x] Surface constraint errors clearly.
 - [x] Add tests for commit, rollback, and nested behavior.
 
 Questions to answer:
@@ -353,6 +353,8 @@ changes.
 - Added a minimal transaction API. Models delegate `transaction` to their
   adapter, and the SQLite adapter wraps a block with `BEGIN`, `COMMIT`, and
   `ROLLBACK`.
+- Added `Acrc::ConstraintError` for SQLite constraint failures such as NOT NULL
+  and UNIQUE violations. Constraint errors still roll back open transactions.
 - Nested transactions are explicitly rejected for now so savepoints can be
   studied separately.
 - Documented the first transaction boundary in `docs/transactions.md`.

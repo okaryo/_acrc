@@ -59,6 +59,31 @@ end
 The inserted row is rolled back because the exception exits the block before
 commit. The exception is not swallowed; callers still see it.
 
+## Constraint Errors
+
+SQLite constraint failures are wrapped as `Acrc::ConstraintError`, which is a
+subclass of `Acrc::DatabaseError`.
+
+```ruby
+User.transaction do
+  User.new("name" => "Alice").save
+  User.new("name" => nil).save
+end
+```
+
+If the database table has `name TEXT NOT NULL`, the second insert raises:
+
+```ruby
+Acrc::ConstraintError
+```
+
+Because the error exits the transaction block, the adapter rolls back the whole
+transaction. The first insert is not committed either.
+
+This is different from a validation error. A validation would be Ruby code
+checking data before SQL is sent. A constraint error means SQL reached the
+database and the database rejected it.
+
 ## Intentional Limitations
 
 - Nested transactions are rejected for now.
@@ -68,8 +93,8 @@ commit. The exception is not swallowed; callers still see it.
 - Object state is not rewound after rollback. If a model instance changes its
   in-memory state before rollback, the database may roll back while the Ruby
   object still reflects the attempted write.
-- Constraint errors are still surfaced through the existing database error
-  wrapping path.
+- Constraint errors are classified, but not yet split into specific subclasses
+  such as not-null, unique, or foreign-key errors.
 
 These limitations keep the first step focused on the database boundary:
 `BEGIN`, ordinary work, then either `COMMIT` or `ROLLBACK`.

@@ -3,6 +3,7 @@
 module Acrc
   class Error < StandardError; end
   class DatabaseError < Error; end
+  class ConstraintError < DatabaseError; end
   class ConfigurationError < Error; end
   class DestroyedRecordError < Error; end
   class InvalidIdentifierError < Error; end
