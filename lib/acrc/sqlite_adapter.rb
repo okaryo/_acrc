@@ -8,7 +8,7 @@ module Acrc
       @database = SQLite3::Database.new(path)
       @database.results_as_hash = true
       @query_log = []
-      @transaction_open = false
+      @transaction_depth = 0
     end
 
     attr_reader :query_log
@@ -28,18 +28,12 @@ module Acrc
 
     def transaction
       raise ArgumentError, "transaction requires a block" unless block_given?
-      raise NotImplementedError, "nested transactions are not supported yet" if @transaction_open
 
-      @transaction_open = true
-      execute("BEGIN")
-      result = yield
-      execute("COMMIT")
-      result
-    rescue StandardError
-      execute("ROLLBACK") if @transaction_open
-      raise
-    ensure
-      @transaction_open = false
+      if transaction_open?
+        transaction_with_savepoint { yield }
+      else
+        transaction_with_begin { yield }
+      end
     end
 
     def last_insert_row_id
@@ -57,6 +51,38 @@ module Acrc
     private
 
     attr_reader :database
+
+    def transaction_open?
+      @transaction_depth.positive?
+    end
+
+    def transaction_with_begin
+      @transaction_depth += 1
+      execute("BEGIN")
+      result = yield
+      execute("COMMIT")
+      result
+    rescue StandardError
+      execute("ROLLBACK") if transaction_open?
+      raise
+    ensure
+      @transaction_depth -= 1
+    end
+
+    def transaction_with_savepoint
+      savepoint_name = "acrc_savepoint_#{@transaction_depth + 1}"
+      @transaction_depth += 1
+      execute("SAVEPOINT #{savepoint_name}")
+      result = yield
+      execute("RELEASE SAVEPOINT #{savepoint_name}")
+      result
+    rescue StandardError
+      execute("ROLLBACK TO SAVEPOINT #{savepoint_name}")
+      execute("RELEASE SAVEPOINT #{savepoint_name}")
+      raise
+    ensure
+      @transaction_depth -= 1
+    end
 
     def normalize_row(row)
       row.each_with_object({}) do |(key, value), normalized|

@@ -83,16 +83,66 @@ class TransactionTest < Minitest::Test
     assert_equal ["BEGIN", "INSERT INTO users (name) VALUES (?)", "ROLLBACK"], @adapter.query_log.map { |entry| entry[:sql] }
   end
 
-  def test_nested_transactions_are_not_supported_yet
-    error = assert_raises(Acrc::NotImplementedError) do
-      User.transaction do
-        User.new("name" => "Alice").save
-        User.transaction { User.new("name" => "Bob").save }
+  def test_nested_transactions_use_savepoints
+    User.transaction do
+      User.new("name" => "Alice").save
+      User.transaction { User.new("name" => "Bob").save }
+    end
+
+    assert_equal ["Alice", "Bob"], User.all.order(id: :asc).map(&:name)
+  end
+
+  def test_nested_transaction_can_roll_back_to_savepoint_and_continue_outer_transaction
+    User.transaction do
+      User.new("name" => "Alice").save
+
+      begin
+        User.transaction do
+          User.new("name" => "Bob").save
+          raise "rollback inner"
+        end
+      rescue RuntimeError
+        User.new("name" => "Carol").save
       end
     end
 
-    assert_equal "nested transactions are not supported yet", error.message
+    assert_equal ["Alice", "Carol"], User.all.order(id: :asc).map(&:name)
+  end
+
+  def test_uncaught_nested_transaction_error_rolls_back_the_outer_transaction
+    error = assert_raises(RuntimeError) do
+      User.transaction do
+        User.new("name" => "Alice").save
+        User.transaction do
+          User.new("name" => "Bob").save
+          raise "rollback all"
+        end
+      end
+    end
+
+    assert_equal "rollback all", error.message
     assert_empty User.all.to_a
+  end
+
+  def test_nested_transactions_record_savepoint_sql
+    @adapter.clear_query_log
+
+    User.transaction do
+      User.new("name" => "Alice").save
+      User.transaction { User.new("name" => "Bob").save }
+    end
+
+    assert_equal(
+      [
+        "BEGIN",
+        "INSERT INTO users (name) VALUES (?)",
+        "SAVEPOINT acrc_savepoint_2",
+        "INSERT INTO users (name) VALUES (?)",
+        "RELEASE SAVEPOINT acrc_savepoint_2",
+        "COMMIT"
+      ],
+      @adapter.query_log.map { |entry| entry[:sql] }
+    )
   end
 
   def test_transaction_requires_a_connection

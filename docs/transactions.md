@@ -84,10 +84,64 @@ This is different from a validation error. A validation would be Ruby code
 checking data before SQL is sent. A constraint error means SQL reached the
 database and the database rejected it.
 
+## Nested Transactions And Savepoints
+
+SQLite does not allow starting a second `BEGIN` inside an open transaction.
+Nested transactions are represented with savepoints instead:
+
+```ruby
+User.transaction do
+  User.new("name" => "Alice").save
+
+  User.transaction do
+    User.new("name" => "Bob").save
+  end
+end
+```
+
+The SQL shape is:
+
+```sql
+BEGIN
+INSERT INTO users (name) VALUES (?)
+SAVEPOINT acrc_savepoint_2
+INSERT INTO users (name) VALUES (?)
+RELEASE SAVEPOINT acrc_savepoint_2
+COMMIT
+```
+
+If the inner transaction raises and the outer block rescues that exception, the
+adapter rolls back only to the savepoint and the outer transaction can continue:
+
+```ruby
+User.transaction do
+  User.new("name" => "Alice").save
+
+  begin
+    User.transaction do
+      User.new("name" => "Bob").save
+      raise "rollback inner"
+    end
+  rescue RuntimeError
+    User.new("name" => "Carol").save
+  end
+end
+```
+
+After commit, Alice and Carol remain. Bob is rolled back:
+
+```text
+Alice
+Carol
+```
+
+If the inner exception is not rescued, it continues out to the outer transaction
+block. The outer transaction then rolls back everything.
+
 ## Intentional Limitations
 
-- Nested transactions are rejected for now.
-- Savepoints are not implemented yet.
+- Nested transactions are implemented with savepoints, not independent database
+  transactions.
 - There is no special rollback-only exception like Active Record's
   `ActiveRecord::Rollback`.
 - Object state is not rewound after rollback. If a model instance changes its
@@ -97,4 +151,5 @@ database and the database rejected it.
   such as not-null, unique, or foreign-key errors.
 
 These limitations keep the first step focused on the database boundary:
-`BEGIN`, ordinary work, then either `COMMIT` or `ROLLBACK`.
+`BEGIN`, ordinary work, then either `COMMIT`, `ROLLBACK`, or savepoint
+operations for nested blocks.

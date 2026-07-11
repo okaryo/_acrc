@@ -185,7 +185,7 @@ Questions to answer:
 - [x] Add a transaction API.
 - [x] Commit successful transaction blocks.
 - [x] Roll back on exceptions.
-- [ ] Explore nested transactions or savepoints if useful.
+- [x] Explore nested transactions or savepoints if useful.
 - [x] Surface constraint errors clearly.
 - [x] Add tests for commit, rollback, and nested behavior.
 
@@ -355,6 +355,7 @@ changes.
   `ROLLBACK`.
 - Added `Acrc::ConstraintError` for SQLite constraint failures such as NOT NULL
   and UNIQUE violations. Constraint errors still roll back open transactions.
-- Nested transactions are explicitly rejected for now so savepoints can be
-  studied separately.
+- Added nested transaction support with SQLite savepoints. Inner transaction
+  failures can roll back to the savepoint if the outer block rescues the
+  exception; uncaught inner failures still roll back the outer transaction.
 - Documented the first transaction boundary in `docs/transactions.md`.
