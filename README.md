@@ -100,7 +100,8 @@ The detailed learning-project operating pattern is documented in
 
 The current implementation has a minimal SQLite adapter, model hydration, lazy
 relations, explicit attribute type casting, insert/update persistence, dirty
-tracking, destroy behavior, and minimal `belongs_to` / `has_many` associations.
+tracking, destroy behavior, minimal `belongs_to` / `has_many` associations, and
+a minimal transaction API.
 The adapter also exposes a small in-memory query log for observing generated
 SQL, bind values, N+1 query behavior, and minimal `belongs_to` preloading in
 tests or examples.
@@ -166,6 +167,12 @@ Run a small association and preload example:
 bundle exec ruby -Ilib -e 'require "acrc"; db = Acrc::SQLiteAdapter.new(":memory:"); db.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)"); db.execute("CREATE TABLE posts (id INTEGER PRIMARY KEY, user_id INTEGER, title TEXT)"); db.execute("INSERT INTO users (name) VALUES (?)", ["Ruby"]); db.execute("INSERT INTO posts (user_id, title) VALUES (?, ?)", [1, "Hello"]); class User < Acrc::Model; table_name "users"; attribute :id, :integer; end; class Post < Acrc::Model; table_name "posts"; attribute :id, :integer; attribute :user_id, :integer; belongs_to :user, class_name: User, foreign_key: :user_id; end; User.has_many :posts, class_name: Post, foreign_key: :user_id; User.connection db; Post.connection db; db.clear_query_log; posts = Post.preload(:user).to_a; p [posts.first.user.name, posts.map(&:title), db.query_log]; db.close'
 ```
 
+Run a small transaction example:
+
+```sh
+bundle exec ruby -Ilib -e 'require "acrc"; db = Acrc::SQLiteAdapter.new(":memory:"); db.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)"); class User < Acrc::Model; table_name "users"; attribute :id, :integer; end; User.connection db; User.transaction { User.new("name" => "Ruby").save }; p User.all.map(&:name); db.close'
+```
+
 The adapter opens a SQLite database, executes SQL with bind parameters, and
 returns result rows as hashes keyed by column name strings. `Acrc::Model` can
 hydrate one of those rows into a Ruby object with readable attributes. `find`
@@ -181,7 +188,8 @@ behind an association method. `has_many` returns a lazy relation for the
 associated collection. The adapter query log makes the SQL hidden by lazy
 relations and associations inspectable. `preload(:user)` can batch a
 `belongs_to` association by loading related users with an `IN` query and storing
-them in each record's association cache.
+them in each record's association cache. `transaction` wraps a block in
+`BEGIN`, `COMMIT`, and `ROLLBACK`.
 
 ## Project Documents
 
@@ -205,3 +213,4 @@ them in each record's association cache.
   composition.
 - `docs/associations.md`: notes on the first `belongs_to` and `has_many`
   associations.
+- `docs/transactions.md`: notes on the first transaction boundary.

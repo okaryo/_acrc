@@ -21,6 +21,13 @@ module Acrc
       @connection
     end
 
+    def self.transaction(&block)
+      adapter = connection
+      raise ConfigurationError, "#{model_name} connection is not configured" unless adapter
+
+      adapter.transaction(&block)
+    end
+
     def self.attribute(name, type)
       type = type.to_sym
       unless SUPPORTED_ATTRIBUTE_TYPES.include?(type)

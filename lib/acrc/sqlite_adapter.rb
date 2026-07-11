@@ -8,6 +8,7 @@ module Acrc
       @database = SQLite3::Database.new(path)
       @database.results_as_hash = true
       @query_log = []
+      @transaction_open = false
     end
 
     attr_reader :query_log
@@ -21,6 +22,22 @@ module Acrc
 
     def clear_query_log
       query_log.clear
+    end
+
+    def transaction
+      raise ArgumentError, "transaction requires a block" unless block_given?
+      raise NotImplementedError, "nested transactions are not supported yet" if @transaction_open
+
+      @transaction_open = true
+      execute("BEGIN")
+      result = yield
+      execute("COMMIT")
+      result
+    rescue StandardError
+      execute("ROLLBACK") if @transaction_open
+      raise
+    ensure
+      @transaction_open = false
     end
 
     def last_insert_row_id

@@ -182,12 +182,12 @@ Questions to answer:
 
 ### 8. Transactions And Constraints
 
-- [ ] Add a transaction API.
-- [ ] Commit successful transaction blocks.
-- [ ] Roll back on exceptions.
+- [x] Add a transaction API.
+- [x] Commit successful transaction blocks.
+- [x] Roll back on exceptions.
 - [ ] Explore nested transactions or savepoints if useful.
 - [ ] Surface constraint errors clearly.
-- [ ] Add tests for commit, rollback, and nested behavior.
+- [x] Add tests for commit, rollback, and nested behavior.
 
 Questions to answer:
 
@@ -350,3 +350,9 @@ changes.
 - Deferred `has_many` preloading, JOIN-based eager loading, inverse
   relationship behavior, and broader N+1 query mitigation.
 - Documented the first association boundaries in `docs/associations.md`.
+- Added a minimal transaction API. Models delegate `transaction` to their
+  adapter, and the SQLite adapter wraps a block with `BEGIN`, `COMMIT`, and
+  `ROLLBACK`.
+- Nested transactions are explicitly rejected for now so savepoints can be
+  studied separately.
+- Documented the first transaction boundary in `docs/transactions.md`.
