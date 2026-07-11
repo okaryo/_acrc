@@ -170,7 +170,7 @@ Questions to answer:
 - [x] Implement a minimal `has_many`.
 - [x] Decide foreign key naming conventions.
 - [x] Decide lazy loading behavior for associated records.
-- [ ] Observe and document N+1 query behavior.
+- [x] Observe and document N+1 query behavior.
 - [ ] Explore eager loading only after lazy associations are clear.
 
 Questions to answer:
@@ -231,8 +231,8 @@ Questions to answer:
 ### 11. Robustness And Diagnostics
 
 - [ ] Add clear ORM-specific error classes.
-- [ ] Add optional SQL logging.
-- [ ] Include generated SQL and binds in test-friendly diagnostics.
+- [x] Add optional SQL logging.
+- [x] Include generated SQL and binds in test-friendly diagnostics.
 - [ ] Add comparison notes against Rails Active Record for selected behavior.
 - [ ] Document known limitations.
 
@@ -339,6 +339,11 @@ changes.
   loads the associated record through the target model's `find`.
 - Added explicit `has_many`. It reads the source model's primary key and returns
   a lazy relation scoped by the configured foreign key.
+- Added a simple adapter query log so generated SQL and binds can be inspected
+  in tests and learning examples.
+- Observed N+1 query behavior with lazy `belongs_to` access in a loop. The same
+  foreign key can be queried repeatedly because association caching and identity
+  maps are intentionally absent.
 - Deferred association caching, eager loading, inverse relationship behavior,
   and N+1 query mitigation.
 - Documented the first association boundaries in `docs/associations.md`.

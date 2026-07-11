@@ -110,4 +110,19 @@ class AssociationTest < Minitest::Test
 
     assert_equal "unknown attribute: id", error.message
   end
+
+  def test_belongs_to_in_a_loop_shows_n_plus_one_queries
+    @adapter.clear_query_log
+
+    posts = Post.all.order(id: :asc).to_a
+    names = posts.map { |post| post.user&.name }
+
+    select_queries = @adapter.query_log.select { |entry| entry[:sql].start_with?("SELECT") }
+    assert_equal ["Alice", "Alice", "Bob", nil], names
+    assert_equal 4, select_queries.length
+    assert_equal ["SELECT * FROM posts ORDER BY id ASC", []], select_queries[0].values_at(:sql, :binds)
+    assert_equal ["SELECT * FROM users WHERE id = ?", [1]], select_queries[1].values_at(:sql, :binds)
+    assert_equal ["SELECT * FROM users WHERE id = ?", [1]], select_queries[2].values_at(:sql, :binds)
+    assert_equal ["SELECT * FROM users WHERE id = ?", [2]], select_queries[3].values_at(:sql, :binds)
+  end
 end

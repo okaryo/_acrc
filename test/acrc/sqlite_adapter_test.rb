@@ -43,4 +43,20 @@ class SQLiteAdapterTest < Minitest::Test
 
     assert_match(/missing_table/, error.message)
   end
+
+  def test_execute_records_sql_and_binds_in_query_log
+    @adapter.clear_query_log
+
+    @adapter.execute("SELECT id FROM users WHERE name = ?", ["Alice"])
+
+    assert_equal [{ sql: "SELECT id FROM users WHERE name = ?", binds: ["Alice"] }], @adapter.query_log
+  end
+
+  def test_clear_query_log_removes_recorded_queries
+    @adapter.execute("SELECT id FROM users")
+
+    @adapter.clear_query_log
+
+    assert_empty @adapter.query_log
+  end
 end

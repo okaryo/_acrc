@@ -101,6 +101,8 @@ The detailed learning-project operating pattern is documented in
 The current implementation has a minimal SQLite adapter, model hydration, lazy
 relations, explicit attribute type casting, insert/update persistence, dirty
 tracking, destroy behavior, and minimal `belongs_to` / `has_many` associations.
+The adapter also exposes a small in-memory query log for observing generated
+SQL, bind values, and N+1 query behavior in tests or examples.
 
 Run the tests:
 
@@ -175,7 +177,8 @@ records and store a generated SQLite primary key back on the model. Persisted
 records track changes and `save` updates changed columns. `destroy` deletes the
 row and marks the object destroyed. `belongs_to` hides a primary-key lookup
 behind an association method. `has_many` returns a lazy relation for the
-associated collection.
+associated collection. The adapter query log makes the SQL hidden by lazy
+relations and associations inspectable.
 
 ## Project Documents
 

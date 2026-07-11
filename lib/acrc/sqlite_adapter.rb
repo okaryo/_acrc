@@ -7,12 +7,20 @@ module Acrc
     def initialize(path)
       @database = SQLite3::Database.new(path)
       @database.results_as_hash = true
+      @query_log = []
     end
 
+    attr_reader :query_log
+
     def execute(sql, binds = [])
+      query_log << { sql: sql, binds: binds.dup }
       database.execute(sql, binds).map { |row| normalize_row(row) }
     rescue SQLite3::Exception => e
       raise DatabaseError, e.message
+    end
+
+    def clear_query_log
+      query_log.clear
     end
 
     def last_insert_row_id
