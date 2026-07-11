@@ -55,6 +55,16 @@ class RelationTest < Minitest::Test
     assert_equal ["Carol"], carol.map(&:name)
   end
 
+  def test_where_accepts_array_values_as_in_conditions
+    names = User.where(id: [1, 3]).order(id: :asc).map(&:name)
+
+    assert_equal ["Alice", "Carol"], names
+  end
+
+  def test_where_with_an_empty_array_matches_no_records
+    assert_empty User.where(id: []).to_a
+  end
+
   def test_all_returns_an_unloaded_relation_for_every_record
     relation = User.all
 

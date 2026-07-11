@@ -125,4 +125,37 @@ class AssociationTest < Minitest::Test
     assert_equal ["SELECT * FROM users WHERE id = ?", [1]], select_queries[2].values_at(:sql, :binds)
     assert_equal ["SELECT * FROM users WHERE id = ?", [2]], select_queries[3].values_at(:sql, :binds)
   end
+
+  def test_preload_loads_belongs_to_associations_in_one_additional_query
+    @adapter.clear_query_log
+
+    posts = Post.all.order(id: :asc).preload(:user).to_a
+    names = posts.map { |post| post.user&.name }
+
+    select_queries = @adapter.query_log.select { |entry| entry[:sql].start_with?("SELECT") }
+    assert_equal ["Alice", "Alice", "Bob", nil], names
+    assert_equal 2, select_queries.length
+    assert_equal ["SELECT * FROM posts ORDER BY id ASC", []], select_queries[0].values_at(:sql, :binds)
+    assert_equal ["SELECT * FROM users WHERE id IN (?, ?)", [1, 2]], select_queries[1].values_at(:sql, :binds)
+  end
+
+  def test_model_preload_starts_from_all_records
+    assert_equal ["Alice", "Alice", "Bob", nil], Post.preload(:user).order(id: :asc).map { |post| post.user&.name }
+  end
+
+  def test_preload_rejects_unknown_associations
+    error = assert_raises(ArgumentError) do
+      Post.all.preload(:missing)
+    end
+
+    assert_equal "unknown association: missing", error.message
+  end
+
+  def test_preload_only_supports_belongs_to_for_now
+    error = assert_raises(Acrc::NotImplementedError) do
+      User.all.preload(:posts)
+    end
+
+    assert_equal "preload only supports belongs_to associations", error.message
+  end
 end

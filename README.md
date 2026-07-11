@@ -102,7 +102,8 @@ The current implementation has a minimal SQLite adapter, model hydration, lazy
 relations, explicit attribute type casting, insert/update persistence, dirty
 tracking, destroy behavior, and minimal `belongs_to` / `has_many` associations.
 The adapter also exposes a small in-memory query log for observing generated
-SQL, bind values, and N+1 query behavior in tests or examples.
+SQL, bind values, N+1 query behavior, and minimal `belongs_to` preloading in
+tests or examples.
 
 Run the tests:
 
@@ -159,10 +160,10 @@ Run a small destroy example:
 bundle exec ruby -Ilib -e 'require "acrc"; db = Acrc::SQLiteAdapter.new(":memory:"); db.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)"); db.execute("INSERT INTO users (name) VALUES (?)", ["Ruby"]); class User < Acrc::Model; table_name "users"; attribute :id, :integer; end; User.connection db; user = User.find(1); user.destroy; p [user.destroyed?, User.where(id: 1).length]; db.close'
 ```
 
-Run a small association example:
+Run a small association and preload example:
 
 ```sh
-bundle exec ruby -Ilib -e 'require "acrc"; db = Acrc::SQLiteAdapter.new(":memory:"); db.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)"); db.execute("CREATE TABLE posts (id INTEGER PRIMARY KEY, user_id INTEGER, title TEXT)"); db.execute("INSERT INTO users (name) VALUES (?)", ["Ruby"]); db.execute("INSERT INTO posts (user_id, title) VALUES (?, ?)", [1, "Hello"]); class User < Acrc::Model; table_name "users"; attribute :id, :integer; end; class Post < Acrc::Model; table_name "posts"; attribute :id, :integer; attribute :user_id, :integer; belongs_to :user, class_name: User, foreign_key: :user_id; end; User.has_many :posts, class_name: Post, foreign_key: :user_id; User.connection db; Post.connection db; p [Post.find(1).user.name, User.find(1).posts.map(&:title)]; db.close'
+bundle exec ruby -Ilib -e 'require "acrc"; db = Acrc::SQLiteAdapter.new(":memory:"); db.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)"); db.execute("CREATE TABLE posts (id INTEGER PRIMARY KEY, user_id INTEGER, title TEXT)"); db.execute("INSERT INTO users (name) VALUES (?)", ["Ruby"]); db.execute("INSERT INTO posts (user_id, title) VALUES (?, ?)", [1, "Hello"]); class User < Acrc::Model; table_name "users"; attribute :id, :integer; end; class Post < Acrc::Model; table_name "posts"; attribute :id, :integer; attribute :user_id, :integer; belongs_to :user, class_name: User, foreign_key: :user_id; end; User.has_many :posts, class_name: Post, foreign_key: :user_id; User.connection db; Post.connection db; db.clear_query_log; posts = Post.preload(:user).to_a; p [posts.first.user.name, posts.map(&:title), db.query_log]; db.close'
 ```
 
 The adapter opens a SQLite database, executes SQL with bind parameters, and
@@ -178,7 +179,9 @@ records track changes and `save` updates changed columns. `destroy` deletes the
 row and marks the object destroyed. `belongs_to` hides a primary-key lookup
 behind an association method. `has_many` returns a lazy relation for the
 associated collection. The adapter query log makes the SQL hidden by lazy
-relations and associations inspectable.
+relations and associations inspectable. `preload(:user)` can batch a
+`belongs_to` association by loading related users with an `IN` query and storing
+them in each record's association cache.
 
 ## Project Documents
 

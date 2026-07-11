@@ -4,14 +4,15 @@ module Acrc
   class Relation
     include Enumerable
 
-    attr_reader :model_class, :conditions, :orderings, :limit_value, :selected_columns
+    attr_reader :model_class, :conditions, :orderings, :limit_value, :selected_columns, :preloads
 
-    def initialize(model_class, conditions = [], orderings: [], limit_value: nil, selected_columns: nil)
+    def initialize(model_class, conditions = [], orderings: [], limit_value: nil, selected_columns: nil, preloads: [])
       @model_class = model_class
       @conditions = conditions.freeze
       @orderings = orderings.freeze
       @limit_value = limit_value
       @selected_columns = selected_columns&.freeze
+      @preloads = preloads.freeze
       @loaded = false
       @records = nil
     end
@@ -48,6 +49,13 @@ module Acrc
       spawn(selected_columns: normalize_selected_columns(selected))
     end
 
+    def preload(*associations)
+      names = associations.flatten
+      raise ArgumentError, "preload associations must not be empty" if names.empty?
+
+      spawn(preloads: preloads + normalize_preloads(names))
+    end
+
     def each(&block)
       to_a.each(&block)
     end
@@ -70,7 +78,8 @@ module Acrc
         overrides.fetch(:conditions, conditions),
         orderings: overrides.fetch(:orderings, orderings),
         limit_value: overrides.fetch(:limit_value, limit_value),
-        selected_columns: overrides.fetch(:selected_columns, selected_columns)
+        selected_columns: overrides.fetch(:selected_columns, selected_columns),
+        preloads: overrides.fetch(:preloads, preloads)
       )
     end
 
@@ -99,9 +108,22 @@ module Acrc
       end
     end
 
+    def normalize_preloads(raw_associations)
+      raw_associations.map do |association|
+        association_name = association.to_s
+        reflection = model_class.association_reflection(association_name)
+        raise ArgumentError, "unknown association: #{association_name}" unless reflection
+        raise NotImplementedError, "preload only supports belongs_to associations" unless reflection[:type] == :belongs_to
+
+        association_name
+      end
+    end
+
     def execute
       rows = model_class.send(:execute_select, sql, binds)
-      rows.map { |row| model_class.hydrate(row) }
+      records = rows.map { |row| model_class.hydrate(row) }
+      preload_records(records)
+      records
     end
 
     def sql
@@ -122,8 +144,14 @@ module Acrc
     end
 
     def where_clause
-      conditions.map do |column, _value|
-        "#{model_class.send(:sql_identifier, column, "column name")} = ?"
+      conditions.map do |column, value|
+        if value.is_a?(Array)
+          next "1 = 0" if value.empty?
+
+          "#{model_class.send(:sql_identifier, column, "column name")} IN (#{(["?"] * value.length).join(", ")})"
+        else
+          "#{model_class.send(:sql_identifier, column, "column name")} = ?"
+        end
       end.join(" AND ")
     end
 
@@ -134,7 +162,38 @@ module Acrc
     end
 
     def binds
-      conditions.map { |_column, value| value }
+      conditions.flat_map do |condition|
+        value = condition[1]
+        value.is_a?(Array) ? value : [value]
+      end
+    end
+
+    def preload_records(records)
+      preloads.each do |association_name|
+        preload_belongs_to(records, association_name)
+      end
+    end
+
+    def preload_belongs_to(records, association_name)
+      reflection = model_class.association_reflection(association_name)
+      foreign_key = reflection[:foreign_key]
+      target_class = reflection[:class_name]
+      target_primary_key = target_class.primary_key
+      foreign_key_values = records.map { |record| record[foreign_key] }.compact.uniq
+
+      records.each { |record| record.send(:set_association, association_name, nil) } if foreign_key_values.empty?
+      return if foreign_key_values.empty?
+
+      target_records = target_class.where(target_primary_key => foreign_key_values).to_a
+      target_records_by_key = target_records.each_with_object({}) do |target_record, by_key|
+        by_key[target_record[target_primary_key]] = target_record
+      end
+
+      records.each do |record|
+        foreign_key_value = record[foreign_key]
+        record.send(:set_association, association_name, nil) if foreign_key_value.nil?
+        record.send(:set_association, association_name, target_records_by_key[foreign_key_value]) if target_records_by_key.key?(foreign_key_value)
+      end
     end
   end
 end

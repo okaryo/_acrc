@@ -103,18 +103,54 @@ This is the classic N+1 shape:
 The next concepts that normally address this are preloading or eager loading,
 but this project intentionally observes the problem before adding the solution.
 
+## Minimal `belongs_to` Preloading
+
+`preload(:user)` reduces the N+1 shape by loading all needed users in one
+additional query:
+
+```ruby
+adapter.clear_query_log
+posts = Post.all.order(id: :asc).preload(:user).to_a
+posts.map { |post| post.user&.name }
+adapter.query_log
+```
+
+The observed SELECT queries now look like this:
+
+```ruby
+[
+  { sql: "SELECT * FROM posts ORDER BY id ASC", binds: [] },
+  { sql: "SELECT * FROM users WHERE id IN (?, ?)", binds: [1, 2] }
+]
+```
+
+The relation still loads posts first. After the posts are hydrated, preload:
+
+1. Reads each post's `user_id`.
+2. Removes nil and duplicate foreign key values.
+3. Loads matching users with `WHERE id IN (?, ?)`.
+4. Stores each loaded user in the post's association cache.
+
+After that, calling `post.user` reads the cached association instead of running
+another `User.find(...)` query.
+
+This is preloading, not a SQL join. The post rows and user rows are still loaded
+by separate SELECT statements.
+
 ## Intentional Limitations
 
 - `belongs_to` requires explicit `class_name` and `foreign_key`.
 - `has_many` requires explicit `class_name` and `foreign_key`.
-- Association results are not cached yet.
-- There is no eager loading yet.
+- Association results are cached only when `preload` sets them.
+- `preload` currently supports only `belongs_to`.
+- There is no JOIN-based eager loading yet.
 - There is no inverse relationship handling.
-- There is no association query batching yet.
+- There is no `has_many` preloading yet.
 - A `has_many` call on a record without a loaded primary key raises an unknown
   attribute error.
 - A nil primary key currently builds a `WHERE foreign_key = NULL` query, which
   SQLite does not treat as `IS NULL`.
 
 These limitations keep this step focused on the SQL hidden behind a
-single-record association method and a collection association method.
+single-record association method, a collection association method, and the
+first batched association load.

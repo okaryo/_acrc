@@ -57,6 +57,10 @@ module Acrc
       all.select(*columns)
     end
 
+    def self.preload(*associations)
+      all.preload(*associations)
+    end
+
     def self.all
       Relation.new(self)
     end
@@ -64,8 +68,15 @@ module Acrc
     def self.belongs_to(name, class_name:, foreign_key:)
       association_name = name.to_s
       foreign_key_name = foreign_key.to_s
+      association_reflections[association_name] = {
+        type: :belongs_to,
+        class_name: class_name,
+        foreign_key: foreign_key_name
+      }
 
       define_method(association_name) do
+        return @association_cache[association_name] if @association_cache.key?(association_name)
+
         foreign_key_value = self[foreign_key_name]
         return nil if foreign_key_value.nil?
 
@@ -76,10 +87,19 @@ module Acrc
     def self.has_many(name, class_name:, foreign_key:)
       association_name = name.to_s
       foreign_key_name = foreign_key.to_s
+      association_reflections[association_name] = {
+        type: :has_many,
+        class_name: class_name,
+        foreign_key: foreign_key_name
+      }
 
       define_method(association_name) do
         class_name.where(foreign_key_name => self[self.class.primary_key])
       end
+    end
+
+    def self.association_reflection(name)
+      association_reflections[name.to_s]
     end
 
     def self.hydrate(row)
@@ -114,6 +134,11 @@ module Acrc
       @attribute_types ||= {}
     end
     private_class_method :local_attribute_types
+
+    def self.association_reflections
+      @association_reflections ||= {}
+    end
+    private_class_method :association_reflections
 
     def self.type_cast_attributes(attributes)
       attributes.each_with_object({}) do |(name, value), casted|
@@ -173,6 +198,7 @@ module Acrc
       @original_attributes = persisted ? @attributes.dup : {}
       @new_record = !persisted
       @destroyed = false
+      @association_cache = {}
       define_attribute_methods
     end
 
@@ -237,6 +263,10 @@ module Acrc
     end
 
     private
+
+    def set_association(name, value)
+      @association_cache[name.to_s] = value
+    end
 
     def delete
       return if new_record?

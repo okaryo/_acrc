@@ -171,7 +171,7 @@ Questions to answer:
 - [x] Decide foreign key naming conventions.
 - [x] Decide lazy loading behavior for associated records.
 - [x] Observe and document N+1 query behavior.
-- [ ] Explore eager loading only after lazy associations are clear.
+- [x] Explore eager loading only after lazy associations are clear.
 
 Questions to answer:
 
@@ -344,6 +344,9 @@ changes.
 - Observed N+1 query behavior with lazy `belongs_to` access in a loop. The same
   foreign key can be queried repeatedly because association caching and identity
   maps are intentionally absent.
-- Deferred association caching, eager loading, inverse relationship behavior,
-  and N+1 query mitigation.
+- Added minimal `belongs_to` preloading. A relation can load source records,
+  query associated records with a single `IN` query, and store the loaded
+  records in each source record's association cache.
+- Deferred `has_many` preloading, JOIN-based eager loading, inverse
+  relationship behavior, and broader N+1 query mitigation.
 - Documented the first association boundaries in `docs/associations.md`.
