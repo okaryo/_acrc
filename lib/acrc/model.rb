@@ -76,6 +76,25 @@ module Acrc
       parent_validations + local_validations
     end
 
+    def self.before_save(method_name = nil, &block)
+      add_callback(:before_save, method_name, block)
+    end
+
+    def self.after_save(method_name = nil, &block)
+      add_callback(:after_save, method_name, block)
+    end
+
+    def self.callbacks(kind)
+      parent_callbacks =
+        if superclass.respond_to?(:callbacks)
+          superclass.callbacks(kind)
+        else
+          []
+        end
+
+      parent_callbacks + local_callbacks.fetch(kind, [])
+    end
+
     def self.find(id)
       record = where(primary_key => id).to_a.first
 
@@ -175,6 +194,18 @@ module Acrc
     end
     private_class_method :local_validations
 
+    def self.add_callback(kind, method_name, block)
+      raise ArgumentError, "#{kind} requires a method name or block" unless method_name || block
+
+      local_callbacks[kind] << (block || method_name.to_sym)
+    end
+    private_class_method :add_callback
+
+    def self.local_callbacks
+      @callbacks ||= Hash.new { |callbacks, kind| callbacks[kind] = [] }
+    end
+    private_class_method :local_callbacks
+
     def self.association_reflections
       @association_reflections ||= {}
     end
@@ -247,11 +278,13 @@ module Acrc
       raise DestroyedRecordError, "cannot save a destroyed record" if destroyed?
       return false unless valid?
 
+      run_callbacks(:before_save)
       if new_record?
         insert
       else
         update
       end
+      run_callbacks(:after_save)
       true
     end
 
@@ -339,6 +372,16 @@ module Acrc
     def add_error(name, message)
       @errors[name] ||= []
       @errors[name] << message
+    end
+
+    def run_callbacks(kind)
+      self.class.callbacks(kind).each do |callback|
+        if callback.respond_to?(:call)
+          instance_exec(&callback)
+        else
+          send(callback)
+        end
+      end
     end
 
     def delete

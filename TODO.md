@@ -217,9 +217,9 @@ Questions to answer:
 - [x] Add a minimal validation error collection if useful.
 - [x] Validate presence or simple predicates.
 - [x] Decide where validations run in `save`.
-- [ ] Add simple lifecycle callbacks only when the persistence lifecycle is
+- [x] Add simple lifecycle callbacks only when the persistence lifecycle is
   already clear.
-- [ ] Compare the benefits and costs of callbacks.
+- [x] Compare the benefits and costs of callbacks.
 
 Questions to answer:
 
@@ -372,3 +372,8 @@ changes.
   instance-level `errors`. `save` now returns `false` before SQL execution when
   validations fail.
 - Documented the first validation boundary in `docs/validations.md`.
+- Added `before_save` and `after_save` callbacks. They run after validation and
+  around insert/update, support method names and blocks, and inherit from parent
+  model classes.
+- Documented callback usefulness and hidden-control-flow risks in
+  `docs/callbacks.md`.

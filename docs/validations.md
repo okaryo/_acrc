@@ -74,7 +74,8 @@ Both are useful, but they answer different questions:
 - There are no custom validators yet.
 - Validations read current in-memory attributes; they do not load missing
   columns from the database.
-- Lifecycle callbacks are not implemented yet.
+- Lifecycle callbacks exist separately; validation failure stops before
+  `before_save`.
 
 This step keeps validation focused on the first boundary: stop invalid
 in-memory data before generating SQL.
