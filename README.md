@@ -259,3 +259,5 @@ a successful save.
 - `docs/migrations.md`: notes on the first migration runner.
 - `docs/validations.md`: notes on the first validation boundary.
 - `docs/callbacks.md`: notes on the first save callbacks.
+- `docs/rails-active-record-comparison.md`: notes comparing selected `_acrc`
+  behavior with Rails Active Record.

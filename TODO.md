@@ -233,7 +233,7 @@ Questions to answer:
 - [x] Add clear ORM-specific error classes.
 - [x] Add optional SQL logging.
 - [x] Include generated SQL and binds in test-friendly diagnostics.
-- [ ] Add comparison notes against Rails Active Record for selected behavior.
+- [x] Add comparison notes against Rails Active Record for selected behavior.
 - [ ] Document known limitations.
 
 Questions to answer:
@@ -380,3 +380,6 @@ changes.
 - Added `save!` and `Acrc::ValidationError`. Non-bang `save` still returns
   `false` for validation failures, while `save!` raises and keeps the invalid
   record available through `error.record`.
+- Added `docs/rails-active-record-comparison.md` to compare selected `_acrc`
+  behavior with Rails Active Record and call out features intentionally not
+  copied yet.
