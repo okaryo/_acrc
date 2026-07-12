@@ -20,12 +20,21 @@ user.errors
 # => { "name" => ["can't be blank"] }
 ```
 
+`save!` uses the same validation flow, but raises when the record is invalid:
+
+```ruby
+user.save!
+# raises Acrc::ValidationError
+```
+
 1. `save` checks whether the record is destroyed.
 2. `save` calls `valid?`.
 3. `valid?` clears previous errors.
 4. Each configured validation runs against the in-memory attributes.
 5. If errors were added, `save` returns `false` and does not execute SQL.
 6. If there are no errors, `save` proceeds to insert or update.
+7. `save!` returns `true` when `save` succeeds.
+8. `save!` raises `Acrc::ValidationError` when `save` returns `false`.
 
 ## Validation Errors
 
@@ -43,6 +52,20 @@ The current shape is a hash from attribute name to messages:
 
 `errors` returns a copy so callers cannot mutate the model's internal error
 state accidentally.
+
+`Acrc::ValidationError` keeps the invalid record available:
+
+```ruby
+begin
+  user.save!
+rescue Acrc::ValidationError => error
+  error.record.errors
+end
+```
+
+This mirrors a common ORM design: non-bang methods are convenient when the
+caller wants to branch on a return value, while bang methods are convenient when
+invalid data should stop the current flow.
 
 ## Validations Versus Constraints
 
@@ -68,7 +91,6 @@ Both are useful, but they answer different questions:
 ## Intentional Limitations
 
 - Only presence validation exists.
-- `save` returns `false` on validation failure; there is no `save!` yet.
 - There is no rich error object, only a hash of messages.
 - There is no validation context such as create versus update.
 - There are no custom validators yet.

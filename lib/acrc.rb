@@ -15,6 +15,25 @@ module Acrc
   class TypeCastError < Error; end
   class UnknownAttributeError < Error; end
   class UnknownTypeError < Error; end
+
+  class ValidationError < Error
+    attr_reader :record
+
+    def initialize(record)
+      @record = record
+      super("validation failed: #{format_errors(record.errors)}")
+    end
+
+    private
+
+    def format_errors(errors)
+      return "unknown error" if errors.empty?
+
+      errors.flat_map do |name, messages|
+        messages.map { |message| "#{name} #{message}" }
+      end.join(", ")
+    end
+  end
 end
 
 require "acrc/model"

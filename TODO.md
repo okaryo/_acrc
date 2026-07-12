@@ -230,7 +230,7 @@ Questions to answer:
 
 ### 11. Robustness And Diagnostics
 
-- [ ] Add clear ORM-specific error classes.
+- [x] Add clear ORM-specific error classes.
 - [x] Add optional SQL logging.
 - [x] Include generated SQL and binds in test-friendly diagnostics.
 - [ ] Add comparison notes against Rails Active Record for selected behavior.
@@ -377,3 +377,6 @@ changes.
   model classes.
 - Documented callback usefulness and hidden-control-flow risks in
   `docs/callbacks.md`.
+- Added `save!` and `Acrc::ValidationError`. Non-bang `save` still returns
+  `false` for validation failures, while `save!` raises and keeps the invalid
+  record available through `error.record`.

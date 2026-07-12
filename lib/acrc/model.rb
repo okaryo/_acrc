@@ -288,6 +288,12 @@ module Acrc
       true
     end
 
+    def save!
+      return true if save
+
+      raise ValidationError.new(self)
+    end
+
     def new_record?
       @new_record
     end

@@ -75,6 +75,37 @@ class ValidationTest < Minitest::Test
     assert_equal ["Alice"], User.all.map(&:name)
   end
 
+  def test_save_bang_returns_true_when_validation_passes
+    user = User.new("name" => "Alice")
+
+    assert_equal true, user.save!
+
+    refute user.new_record?
+    assert_equal ["Alice"], User.all.map(&:name)
+  end
+
+  def test_save_bang_raises_validation_error_and_does_not_insert_when_validation_fails
+    user = User.new("name" => nil)
+    @adapter.clear_query_log
+
+    error = assert_raises(Acrc::ValidationError) { user.save! }
+
+    assert_same user, error.record
+    assert_equal "validation failed: name can't be blank", error.message
+    assert user.new_record?
+    assert_equal({ "name" => ["can't be blank"] }, user.errors)
+    assert_empty @adapter.execute("SELECT * FROM users")
+    refute_includes @adapter.query_log.map { |entry| entry[:sql] }, "INSERT INTO users (name) VALUES (?)"
+  end
+
+  def test_save_bang_propagates_destroyed_record_error
+    user = User.new("name" => "Alice")
+    user.save!
+    user.destroy
+
+    assert_raises(Acrc::DestroyedRecordError) { user.save! }
+  end
+
   def test_save_runs_validations_for_updates
     user = User.new("name" => "Alice")
     user.save

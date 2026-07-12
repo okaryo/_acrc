@@ -194,6 +194,12 @@ Run a small validation example:
 bundle exec ruby -Ilib -e 'require "acrc"; db = Acrc::SQLiteAdapter.new(":memory:"); db.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL)"); class User < Acrc::Model; table_name "users"; validates_presence_of :name; end; User.connection db; user = User.new("name" => nil); p [user.save, user.errors, User.all.to_a]; db.close'
 ```
 
+Run a validation exception example:
+
+```sh
+bundle exec ruby -Ilib -e 'require "acrc"; db = Acrc::SQLiteAdapter.new(":memory:"); db.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL)"); class User < Acrc::Model; table_name "users"; validates_presence_of :name; end; User.connection db; user = User.new("name" => nil); begin; user.save!; rescue Acrc::ValidationError => e; p [e.message, e.record.errors]; end; db.close'
+```
+
 Run a small callback example:
 
 ```sh
@@ -222,8 +228,9 @@ uses SQLite schema introspection to expose table column metadata without yet
 turning that metadata into automatic type declarations. `MigrationRunner`
 records applied versions in `acrc_schema_migrations` so schema changes run only
 once. `validates_presence_of` can stop invalid in-memory records before SQL is
-generated. `before_save` and `after_save` can run lifecycle logic around a
-successful save.
+generated. `save!` raises `Acrc::ValidationError` with the invalid record when
+validation fails. `before_save` and `after_save` can run lifecycle logic around
+a successful save.
 
 ## Project Documents
 
