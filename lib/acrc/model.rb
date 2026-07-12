@@ -59,6 +59,23 @@ module Acrc
       parent_types.merge(local_attribute_types)
     end
 
+    def self.validates_presence_of(*names)
+      names.each do |name|
+        local_validations << { type: :presence, name: name.to_s }
+      end
+    end
+
+    def self.validations
+      parent_validations =
+        if superclass.respond_to?(:validations)
+          superclass.validations
+        else
+          []
+        end
+
+      parent_validations + local_validations
+    end
+
     def self.find(id)
       record = where(primary_key => id).to_a.first
 
@@ -153,6 +170,11 @@ module Acrc
     end
     private_class_method :local_attribute_types
 
+    def self.local_validations
+      @validations ||= []
+    end
+    private_class_method :local_validations
+
     def self.association_reflections
       @association_reflections ||= {}
     end
@@ -217,11 +239,13 @@ module Acrc
       @new_record = !persisted
       @destroyed = false
       @association_cache = {}
+      @errors = {}
       define_attribute_methods
     end
 
     def save
       raise DestroyedRecordError, "cannot save a destroyed record" if destroyed?
+      return false unless valid?
 
       if new_record?
         insert
@@ -241,6 +265,16 @@ module Acrc
 
     def destroyed?
       @destroyed
+    end
+
+    def valid?
+      @errors = {}
+      run_validations
+      @errors.empty?
+    end
+
+    def errors
+      @errors.transform_values(&:dup)
     end
 
     def destroy
@@ -284,6 +318,27 @@ module Acrc
 
     def set_association(name, value)
       @association_cache[name.to_s] = value
+    end
+
+    def run_validations
+      self.class.validations.each do |validation|
+        case validation[:type]
+        when :presence
+          validate_presence(validation[:name])
+        end
+      end
+    end
+
+    def validate_presence(name)
+      value = @attributes[name]
+      return unless value.nil? || (value.respond_to?(:empty?) && value.empty?)
+
+      add_error(name, "can't be blank")
+    end
+
+    def add_error(name, message)
+      @errors[name] ||= []
+      @errors[name] << message
     end
 
     def delete

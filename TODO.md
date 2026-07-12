@@ -214,9 +214,9 @@ Questions to answer:
 
 ### 10. Validations, Callbacks, And Lifecycle
 
-- [ ] Add a minimal validation error collection if useful.
-- [ ] Validate presence or simple predicates.
-- [ ] Decide where validations run in `save`.
+- [x] Add a minimal validation error collection if useful.
+- [x] Validate presence or simple predicates.
+- [x] Decide where validations run in `save`.
 - [ ] Add simple lifecycle callbacks only when the persistence lifecycle is
   already clear.
 - [ ] Compare the benefits and costs of callbacks.
@@ -368,3 +368,7 @@ changes.
   Ruby blocks, run in transactions, and record applied versions in
   `acrc_schema_migrations`.
 - Documented the first migration runner in `docs/migrations.md`.
+- Added presence validations with `validates_presence_of`, `valid?`, and
+  instance-level `errors`. `save` now returns `false` before SQL execution when
+  validations fail.
+- Documented the first validation boundary in `docs/validations.md`.

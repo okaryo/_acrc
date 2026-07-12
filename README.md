@@ -102,7 +102,8 @@ The current implementation has a minimal SQLite adapter, model hydration, lazy
 relations, explicit attribute type casting, insert/update persistence, dirty
 tracking, destroy behavior, minimal `belongs_to` / `has_many` associations, and
 a minimal transaction API. Models can also inspect SQLite table columns through
-their configured adapter, and migrations can run once by version.
+their configured adapter, migrations can run once by version, and models can
+run simple presence validations before writing SQL.
 The adapter also exposes a small in-memory query log for observing generated
 SQL, bind values, N+1 query behavior, and minimal `belongs_to` preloading in
 tests or examples.
@@ -186,6 +187,12 @@ Run a small migration example:
 bundle exec ruby -Ilib -e 'require "acrc"; db = Acrc::SQLiteAdapter.new(":memory:"); migration = Acrc::Migration.new("202607120001", "create_users") { |adapter| adapter.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)") }; runner = Acrc::MigrationRunner.new(db); p runner.migrate([migration]); p runner.migrate([migration]); p db.columns("users").map(&:name); db.close'
 ```
 
+Run a small validation example:
+
+```sh
+bundle exec ruby -Ilib -e 'require "acrc"; db = Acrc::SQLiteAdapter.new(":memory:"); db.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL)"); class User < Acrc::Model; table_name "users"; validates_presence_of :name; end; User.connection db; user = User.new("name" => nil); p [user.save, user.errors, User.all.to_a]; db.close'
+```
+
 The adapter opens a SQLite database, executes SQL with bind parameters, and
 returns result rows as hashes keyed by column name strings. `Acrc::Model` can
 hydrate one of those rows into a Ruby object with readable attributes. `find`
@@ -207,7 +214,8 @@ SQLite constraint failures are wrapped as `Acrc::ConstraintError`. `columns`
 uses SQLite schema introspection to expose table column metadata without yet
 turning that metadata into automatic type declarations. `MigrationRunner`
 records applied versions in `acrc_schema_migrations` so schema changes run only
-once.
+once. `validates_presence_of` can stop invalid in-memory records before SQL is
+generated.
 
 ## Project Documents
 
@@ -234,3 +242,4 @@ once.
 - `docs/transactions.md`: notes on the first transaction boundary.
 - `docs/schema-introspection.md`: notes on reading SQLite table metadata.
 - `docs/migrations.md`: notes on the first migration runner.
+- `docs/validations.md`: notes on the first validation boundary.
