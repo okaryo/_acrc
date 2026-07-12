@@ -261,3 +261,5 @@ a successful save.
 - `docs/callbacks.md`: notes on the first save callbacks.
 - `docs/rails-active-record-comparison.md`: notes comparing selected `_acrc`
   behavior with Rails Active Record.
+- `docs/known-limitations.md`: current boundaries and intentionally unsupported
+  behavior.

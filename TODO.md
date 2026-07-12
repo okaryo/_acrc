@@ -234,7 +234,7 @@ Questions to answer:
 - [x] Add optional SQL logging.
 - [x] Include generated SQL and binds in test-friendly diagnostics.
 - [x] Add comparison notes against Rails Active Record for selected behavior.
-- [ ] Document known limitations.
+- [x] Document known limitations.
 
 Questions to answer:
 
@@ -383,3 +383,6 @@ changes.
 - Added `docs/rails-active-record-comparison.md` to compare selected `_acrc`
   behavior with Rails Active Record and call out features intentionally not
   copied yet.
+- Added `docs/known-limitations.md` to gather the current learning boundaries
+  across adapters, schema, queries, persistence, associations, validations,
+  callbacks, transactions, and diagnostics.
