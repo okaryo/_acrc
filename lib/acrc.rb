@@ -18,5 +18,6 @@ module Acrc
 end
 
 require "acrc/model"
+require "acrc/migration"
 require "acrc/relation"
 require "acrc/sqlite_adapter"

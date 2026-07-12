@@ -200,9 +200,9 @@ Questions to answer:
 
 - [x] Decide whether schema is declared in Ruby or introspected from the
   database.
-- [ ] Add a minimal migration runner if useful.
-- [ ] Create and alter tables through migration objects or scripts.
-- [ ] Track applied migrations.
+- [x] Add a minimal migration runner if useful.
+- [x] Create and alter tables through migration objects or scripts.
+- [x] Track applied migrations.
 - [x] Document schema limitations.
 
 Questions to answer:
@@ -364,3 +364,7 @@ changes.
   `_acrc` type declarations remain manual.
 - Documented the schema introspection boundary in
   `docs/schema-introspection.md`.
+- Added `Acrc::Migration` and `Acrc::MigrationRunner`. Migrations are versioned
+  Ruby blocks, run in transactions, and record applied versions in
+  `acrc_schema_migrations`.
+- Documented the first migration runner in `docs/migrations.md`.
