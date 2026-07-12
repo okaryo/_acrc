@@ -79,4 +79,24 @@ class SQLiteAdapterTest < Minitest::Test
 
     assert_empty @adapter.query_log
   end
+
+  def test_columns_returns_sqlite_table_info
+    @adapter.execute("CREATE TABLE posts (id INTEGER PRIMARY KEY, title TEXT NOT NULL, status TEXT DEFAULT 'draft')")
+
+    columns = @adapter.columns("posts")
+
+    assert_equal ["id", "title", "status"], columns.map(&:name)
+    assert_equal ["INTEGER", "TEXT", "TEXT"], columns.map(&:type)
+    assert_equal [false, false, true], columns.map(&:nullable)
+    assert_equal [true, false, false], columns.map(&:primary_key)
+    assert_equal [nil, nil, "'draft'"], columns.map(&:default)
+  end
+
+  def test_columns_rejects_unsafe_table_names
+    error = assert_raises(Acrc::InvalidIdentifierError) do
+      @adapter.columns("users; DROP TABLE users")
+    end
+
+    assert_equal 'invalid table name: "users; DROP TABLE users"', error.message
+  end
 end

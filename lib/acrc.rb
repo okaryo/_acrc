@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 module Acrc
+  Column = Struct.new(:name, :type, :nullable, :primary_key, :default, keyword_init: true)
+
   class Error < StandardError; end
   class DatabaseError < Error; end
   class ConstraintError < DatabaseError; end

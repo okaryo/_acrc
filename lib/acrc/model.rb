@@ -28,6 +28,17 @@ module Acrc
       adapter.transaction(&block)
     end
 
+    def self.columns
+      adapter = connection
+      raise ConfigurationError, "#{model_name} connection is not configured" unless adapter
+
+      adapter.columns(table_name)
+    end
+
+    def self.column_names
+      columns.map(&:name)
+    end
+
     def self.attribute(name, type)
       type = type.to_sym
       unless SUPPORTED_ATTRIBUTE_TYPES.include?(type)

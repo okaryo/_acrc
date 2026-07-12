@@ -198,12 +198,12 @@ Questions to answer:
 
 ### 9. Schema And Migrations
 
-- [ ] Decide whether schema is declared in Ruby or introspected from the
+- [x] Decide whether schema is declared in Ruby or introspected from the
   database.
 - [ ] Add a minimal migration runner if useful.
 - [ ] Create and alter tables through migration objects or scripts.
 - [ ] Track applied migrations.
-- [ ] Document schema limitations.
+- [x] Document schema limitations.
 
 Questions to answer:
 
@@ -359,3 +359,8 @@ changes.
   failures can roll back to the savepoint if the outer block rescues the
   exception; uncaught inner failures still roll back the outer transaction.
 - Documented the first transaction boundary in `docs/transactions.md`.
+- Added SQLite schema introspection with `SQLiteAdapter#columns`, `Model.columns`,
+  and `Model.column_names`. The database schema can now be observed, while
+  `_acrc` type declarations remain manual.
+- Documented the schema introspection boundary in
+  `docs/schema-introspection.md`.

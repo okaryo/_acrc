@@ -26,6 +26,20 @@ module Acrc
       query_log.clear
     end
 
+    def columns(table_name)
+      rows = execute("PRAGMA table_info(#{sql_identifier(table_name, "table name")})")
+      rows.map do |row|
+        primary_key = row["pk"].to_i.positive?
+        Column.new(
+          name: row["name"],
+          type: row["type"],
+          nullable: row["notnull"].to_i.zero? && !primary_key,
+          primary_key: primary_key,
+          default: row["dflt_value"]
+        )
+      end
+    end
+
     def transaction
       raise ArgumentError, "transaction requires a block" unless block_given?
 
@@ -51,6 +65,13 @@ module Acrc
     private
 
     attr_reader :database
+
+    def sql_identifier(value, label)
+      identifier = value.to_s
+      return identifier if /\A[a-zA-Z_][a-zA-Z0-9_]*\z/.match?(identifier)
+
+      raise InvalidIdentifierError, "invalid #{label}: #{identifier.inspect}"
+    end
 
     def transaction_open?
       @transaction_depth.positive?

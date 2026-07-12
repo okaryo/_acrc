@@ -47,8 +47,8 @@ dirty-tracking step can compare against.
 
 ## Intentional Limitations
 
-- There is no schema introspection yet.
-- Type declarations are manual.
+- Schema introspection exists, but it does not infer type declarations yet.
+- Type declarations are still manual.
 - Query values are not type-cast separately yet.
 - Boolean casting accepts only a small set of common values.
 - Time casting uses Ruby's standard `Time.parse`.

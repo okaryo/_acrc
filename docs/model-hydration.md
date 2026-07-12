@@ -66,7 +66,8 @@ overrides of existing Ruby methods.
 
 - Models do not know about database connections yet.
 - There is no `find`, `where`, or relation object yet.
-- There is no schema introspection yet.
+- Schema introspection exists, but hydration still uses the loaded row rather
+  than defining readers from the full table schema.
 - Attribute methods are generated from loaded rows rather than declared columns.
 - Type casting is limited to whatever the adapter already returned.
 
